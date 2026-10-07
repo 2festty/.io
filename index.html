@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>taska@root:~$</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=VT323&family=Share+Tech+Mono&family=Source+Code+Pro:wght@500;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    background: #000;
+    font-family: 'Source Code Pro', 'Share Tech Mono', monospace;
+    color: #d3e9dc;
+  }
+
+  #scene {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+  }
+
+  .vignette {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 54%, rgba(0,0,0,0.32) 100%);
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  .scanlines {
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      rgba(0, 0, 0, 0.12) 0px,
+      rgba(0, 0, 0, 0.12) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+    pointer-events: none;
+    z-index: 3;
+  }
+
+  .crt {
+    position: fixed;
+    inset: 0;
+    box-shadow: inset 0 0 160px rgba(0, 255, 65, 0.09);
+    pointer-events: none;
+    z-index: 3;
+  }
+
+  .noise {
+    position: fixed;
+    inset: 0;
+    z-index: 3;
+    pointer-events: none;
+    opacity: 0.018;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  #boot {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    background: #000;
+    padding: 4vh 4vw;
+    font-size: clamp(12px, 1.5vw, 17px);
+    line-height: 1.6;
+    white-space: pre-wrap;
+    text-shadow: none;
+    overflow: hidden;
+  }
+
+  #boot .cursor {
+    display: inline-block;
+    width: 0.55em;
+    height: 1.1em;
+    background: #00ff41;
+    vertical-align: text-bottom;
+    animation: blink 0.7s steps(1) infinite;
+  }
+
+  @keyframes blink { 50% { opacity: 0; } }
+
+  #presskey {
+    position: fixed;
+    inset: 0;
+    z-index: 21;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.88);
+    font-family: 'VT323', monospace;
+    font-size: clamp(18px, 2.8vw, 32px);
+    letter-spacing: 5px;
+    color: #d3e9dc;
+    animation: pulse 1.6s ease-in-out infinite;
+    user-select: none;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  #workspace {
+    position: fixed;
+    inset: 4vh 4vw;
+    z-index: 10;
+    display: none;
+    grid-template-columns: minmax(0, 1.45fr) minmax(260px, .75fr);
+    gap: clamp(24px, 4vw, 64px);
+    align-items: stretch;
+  }
+
+  #console {
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    padding: clamp(16px, 2.2vw, 32px);
+    font-size: clamp(12px, 1.4vw, 16px);
+    background: rgba(0, 8, 4, .78);
+    border: 1px solid rgba(0, 255, 80, .23);
+    box-shadow: 0 18px 70px rgba(0, 0, 0, .48);
+  }
+
+  #inputline {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+    min-height: 54px;
+    margin-bottom: 22px;
+    padding: 10px 16px;
+    border: 1px solid rgba(0, 255, 80, 0.34);
+    border-left: 3px solid #67e8bd;
+    background: linear-gradient(100deg, rgba(1, 18, 9, 0.92), rgba(4, 10, 7, 0.78));
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.42), inset 0 0 24px rgba(0, 255, 65, 0.045);
+    text-shadow: none;
+    transition: border-color .18s ease, box-shadow .18s ease;
+  }
+
+  #inputline:focus-within {
+    border-color: rgba(0, 255, 100, 0.8);
+    border-left-color: #67e8bd;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.48), 0 0 24px rgba(0, 255, 65, 0.12);
+  }
+
+  #output {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: normal;
+    overflow-wrap: anywhere;
+    padding-bottom: 8px;
+    scrollbar-width: thin;
+    scrollbar-color: #00ff41 #001100;
+    line-height: 1.45;
+    font-variant-ligatures: none;
+  }
+
+  #output::-webkit-scrollbar { width: 5px; }
+  #output::-webkit-scrollbar-thumb { background: #00ff41; }
+  #output::-webkit-scrollbar-track { background: #001100; }
+
+  #output .dim { color: rgba(0, 255, 65, 0.5); }
+  #output .bright { color: #9de8c4; }
+  #output .white { color: #f1f5f2; }
+  #output .err { color: #ff8d91; }
+  #output .cyan { color: #86d9d0; }
+
+  #prompt {
+    color: #72dbb6;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  #cmd {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #f1f5f2;
+    font: inherit;
+    caret-color: #00ff41;
+    min-width: 0;
+  }
+
+  #cmd::placeholder { color: rgba(214, 255, 231, .32); }
+
+  .logo {
+    display: block;
+    color: #9de8c4;
+    font-weight: 700;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: clamp(7px, 1.15vw, 13px);
+    line-height: 1.18;
+    white-space: pre;
+  }
+
+  .avatar-pop {
+    display: inline-block;
+    border: 1px solid rgba(0, 255, 65, 0.55);
+    padding: 2px;
+    margin: 4px 0;
+    box-shadow: 0 0 18px rgba(0, 255, 65, 0.3);
+  }
+
+  .avatar-pop img {
+    display: block;
+    width: min(52vw, 330px);
+    height: min(52vw, 330px);
+    object-fit: cover;
+    filter: grayscale(.25) brightness(.88) contrast(1.12) saturate(.82) sepia(.18) hue-rotate(68deg);
+  }
+
+  .profile {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    padding: 24px;
+    border-left: 1px solid rgba(0, 255, 80, .26);
+    color: #c9ddd0;
+  }
+
+  .profile .avatar-pop {
+    padding: 5px;
+    border-color: rgba(105, 224, 173, .65);
+    box-shadow: 0 0 0 1px rgba(105, 224, 173, .12), 0 18px 50px rgba(0, 0, 0, .42);
+  }
+
+  .profile .avatar-pop img {
+    width: clamp(170px, 21vw, 300px);
+    height: clamp(170px, 21vw, 300px);
+  }
+
+  .profile-name {
+    color: #e5f0e9;
+    font-size: clamp(24px, 3vw, 38px);
+    font-weight: 700;
+  }
+
+  .profile-discord {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: #9de8c4;
+    font-size: 15px;
+    padding: 10px 14px;
+    border: 1px solid rgba(105, 224, 173, .3);
+    background: rgba(0, 14, 8, .58);
+    cursor: pointer;
+  }
+
+  .profile-discord:hover { background: rgba(0, 45, 26, .72); }
+  .profile-discord svg { width: 20px; height: 20px; fill: currentColor; }
+  .profile-label { color: rgba(201, 221, 208, .48); font-size: 11px; }
+
+  .avatar-pop.is-large {
+    display: block;
+    width: fit-content;
+    margin: 10px 0;
+  }
+
+  .avatar-pop.is-large img {
+    width: min(38vw, 280px);
+    height: min(38vw, 280px);
+  }
+
+  @media (max-width: 600px) {
+    #workspace {
+      inset: 14px 12px;
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: minmax(0, 1fr) auto;
+      gap: 10px;
+    }
+    #console { padding: 12px; }
+    #inputline { min-height: 48px; margin-bottom: 16px; padding: 8px 10px; gap: 8px; }
+    #prompt { font-size: 11px; }
+    #output { line-height: 1.4; }
+    .profile {
+      flex-direction: row;
+      justify-content: flex-start;
+      gap: 12px;
+      padding: 8px 12px;
+      border-left: 0;
+      border-top: 1px solid rgba(0, 255, 80, .26);
+    }
+    .profile .avatar-pop { padding: 2px; margin: 0; }
+    .profile .avatar-pop img { width: 64px; height: 64px; }
+    .profile-name { font-size: 20px; }
+    .profile-label { display: none; }
+    .profile-discord { margin-left: auto; padding: 7px 9px; font-size: 12px; }
+    .profile-discord svg { width: 17px; height: 17px; }
+    .avatar-pop.is-large img { width: min(68vw, 250px); height: min(68vw, 250px); }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="scene"></canvas>
+
+<div class="vignette"></div>
+<div class="scanlines"></div>
+<div class="crt"></div>
+<div class="noise"></div>
+
+<div id="boot"></div>
+<div id="presskey">[ PRESS ANY KEY TO ACCESS SYSTEM ]</div>
+
+<main id="workspace">
+  <section id="console" aria-label="Терминал">
+    <div id="inputline">
+      <span id="prompt">taska@root:~$</span>
+      <input id="cmd" autocomplete="off" spellcheck="false" placeholder="help" aria-label="Введите команду">
+    </div>
+    <div id="output" aria-live="polite"></div>
+  </section>
+  <aside class="profile" aria-label="Профиль taska">
+    <div class="avatar-pop"><img src="https://media1.tenor.com/m/WZoUBNBCxrgAAAAC/anime-spirit.gif" alt="Аватар taska"></div>
+    <div class="profile-name">taska</div>
+    <button class="profile-discord" id="discordCopy" type="button" title="Скопировать Discord username">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.058a.082.082 0 0 0 .031.056 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128c.126-.094.252-.192.372-.291a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.3 12.3 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.84 19.84 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>
+      <span>sex.ip</span>
+    </button>
+    <span class="profile-label">трахаю жизнь</span>
+  </aside>
+</main>
+
+<audio id="bgm" loop preload="auto">
+  <source src="https://fine.sunproxy.net/file/WDQ4WGRiekxNeUxHSHkwdWJkdVFFNXA2S1JGSE5aOHNub05XSmcxbnV5VkE1czJ6Z21CR3lTTHFwM0MvWjF6R01TSS9oN2gxZVUxTGRJU2xSTHdUQXhYdXZHVSt0cWx5MjdZSEl4bWMwQ0E9/Avtostopom_po_faze_sna_-_kanet_v_niz_(SkySound7.com).mp3" type="audio/mpeg">
+</audio>
+
+<script>
+(function () {
+  // Perspective code rain with a projected grid floor, rendered on one canvas.
+  const canvas = document.getElementById('scene');
+  const glyphs = '012345789:<>+-*/アイウエオカキクケコサシスセソタチツテトナニヌネノ';
+  const ctx = canvas.getContext('2d', { alpha: false });
+  const fontSize = 17;
+  const rowHeight = 19;
+  let width = 0, height = 0, dpr = 1, drops = [], speeds = [], lastFrame = 0;
+  let pointerX = 0, pointerY = 0;
+
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 1.25);
+    width = window.innerWidth;
+    height = window.innerHeight;
+    canvas.width = Math.round(width * dpr);
+    canvas.height = Math.round(height * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, width, height);
+    const count = Math.ceil(width / fontSize);
+    drops = Array.from({ length: count }, () => Math.random() * (height / rowHeight));
+    speeds = drops.map(() => .45 + Math.random() * 1.1);
+  }
+
+  function drawFloor() {
+    const horizon = height * .58 + pointerY * 8;
+    const center = width * .5 + pointerX * 18;
+    ctx.save();
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = 'rgba(35, 185, 112, .15)';
+    for (let i = 0; i < 18; i++) {
+      const progress = (i / 18 + (lastFrame * .000025) % (1 / 18)) % 1;
+      const y = horizon + (height - horizon) * progress * progress;
+      ctx.globalAlpha = .08 + progress * .17;
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(width, y);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = .18;
+    for (let i = -12; i <= 12; i++) {
+      ctx.beginPath();
+      ctx.moveTo(center, horizon);
+      ctx.lineTo(center + i * width * .12, height);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function animate(now) {
+    requestAnimationFrame(animate);
+    if (now - lastFrame < 30) return;
+    const elapsed = Math.min((now - lastFrame) / 1000 || .03, .06);
+    lastFrame = now;
+    ctx.fillStyle = 'rgba(0, 3, 1, .19)';
+    ctx.fillRect(0, 0, width, height);
+    ctx.font = fontSize + 'px monospace';
+    ctx.textAlign = 'center';
+    drops.forEach((row, i) => {
+      const x = i * fontSize + fontSize / 2 + pointerX * (i / drops.length - .5) * 24;
+      const y = row * rowHeight;
+      ctx.fillStyle = '#d8ffe9';
+      ctx.globalAlpha = .88;
+      ctx.fillText(glyphs[(Math.random() * glyphs.length) | 0], x, y);
+      ctx.fillStyle = '#00a65b';
+      for (let tail = 1; tail <= 8; tail++) {
+        ctx.globalAlpha = (1 - tail / 9) * .62;
+        ctx.fillText(glyphs[(Math.random() * glyphs.length) | 0], x, y - tail * rowHeight);
+      }
+      ctx.globalAlpha = 1;
+      drops[i] += speeds[i] * elapsed * 22;
+      if (y > height && Math.random() > .975) {
+        drops[i] = -Math.random() * 18;
+        speeds[i] = .45 + Math.random() * 1.1;
+      }
+    });
+    ctx.globalAlpha = 1;
+    drawFloor();
+  }
+
+  window.addEventListener('resize', resize);
+  window.addEventListener('pointermove', e => {
+    pointerX = e.clientX / window.innerWidth - .5;
+    pointerY = e.clientY / window.innerHeight - .5;
+  }, { passive: true });
+  document.addEventListener('visibilitychange', () => { lastFrame = 0; });
+  resize();
+  requestAnimationFrame(animate);
+
+  // ============ BOOT SEQUENCE ============
+  const bootEl = document.getElementById('boot');
+  const bootLines = [
+    'WAKE UP, TASKA.',
+    'CPU: QuantumCore i9-2600K ............ OK',
+    'MEMORY: 640K conventional ............ OK',
+    'RENDER: DIGITAL REALM ............... ONLINE',
+    'NET: eth0 10.0.0.13 ................. CONNECTED',
+    'LOADING kernel modules [##########] 100%',
+    'Mounting /dev/bio ................... OK',
+    'Starting identity.service ........... OK',
+    'Decrypting profile: TASKA ........... DONE',
+    '',
+    'ACCESS GRANTED.'
+  ];
+
+  function runBoot() {
+    let li = 0;
+    function nextLine() {
+      if (li < bootLines.length) {
+        bootEl.innerHTML = bootLines.slice(0, li + 1).join('\n') + '\n<span class="cursor"></span>';
+        li++;
+        setTimeout(nextLine, 80 + Math.random() * 140);
+      } else {
+        setTimeout(function () {
+          bootEl.style.display = 'none';
+          document.getElementById('presskey').style.display = 'flex';
+        }, 600);
+      }
+    }
+    nextLine();
+  }
+  runBoot();
+
+  // ============ AUDIO ============
+  const audio = document.getElementById('bgm');
+  let playing = false;
+
+  function startAudio() {
+    if (playing) return;
+    audio.volume = 0.5;
+    audio.play().then(function () {
+      playing = true;
+    }).catch(function () {});
+  }
+
+  // ============ CONSOLE ============
+  const output = document.getElementById('output');
+  const cmdInput = document.getElementById('cmd');
+  const consoleEl = document.getElementById('console');
+  let started = false;
+  let history = [];
+  let hIndex = -1;
+
+  const ASCII_LOGO = [
+    ' _____   ___   _____  _  __   ___',
+    '|__   | / _ \\ / ____|| |/ /  / _ \\',
+    '   | | | |_| | (___  |   /  | | | |',
+    '   | | |  _  |\\___ \\ |  <   | | | |',
+    '   | | | | | |____) || . \\  | |_| |',
+    '   |_| |_| |_/_____/ |_|\\_\\  \\___/'
+  ].join('\n');
+
+  const BIO = [
+    '+--------------------------------------+',
+    '| USER:    taska                       |',
+    '| DISCORD: sex.ip                      |',
+    '| STATUS:  online                      |',
+    '| RANK:    root                        |',
+    '+--------------------------------------+'
+  ].join('\n');
+
+  function printRaw(text, cls) {
+    const span = document.createElement('span');
+    if (cls) span.className = cls;
+    span.textContent = text;
+    output.appendChild(span);
+    output.appendChild(document.createTextNode('\n'));
+    output.scrollTop = output.scrollHeight;
+  }
+
+  function printHTML(html) {
+    const div = document.createElement('div');
+    div.innerHTML = html;
+    output.appendChild(div);
+    output.scrollTop = output.scrollHeight;
+  }
+
+  const commands = {
+    help: function () {
+      printRaw('available commands:', 'bright');
+      printRaw('  help      - show this message');
+      printRaw('  whoami    - display identity');
+      printRaw('  bio       - show profile card');
+      printRaw('  avatar    - render avatar');
+      printRaw('  discord   - copy discord tag');
+      printRaw('  neofetch  - system info');
+      printRaw('  clear     - clear terminal');
+      printRaw('  exit      - logout (joke)');
+      printRaw('  sudo      - try it');
+    },
+    whoami: function () {
+      printRaw('taska - root user, rank: GODMODE', 'white');
+    },
+    bio: function () {
+      printRaw(BIO);
+    },
+    avatar: function () {
+      printHTML('<span class="avatar-pop is-large"><img src="https://media1.tenor.com/m/WZoUBNBCxrgAAAAC/anime-spirit.gif" alt="avatar"></span>');
+      printRaw('avatar rendered. filter: MATRIX/CRT-9000', 'dim');
+    },
+    discord: function () {
+      if (navigator.clipboard) navigator.clipboard.writeText('sex.ip').catch(function () {});
+      printRaw('discord tag copied: sex.ip', 'bright');
+    },
+    neofetch: function () {
+      printRaw(ASCII_LOGO, 'logo');
+      printRaw('');
+      printRaw('  taska@root', 'cyan');
+      printRaw('  -------------', 'dim');
+      printRaw('  OS: TASKA shell x86_64');
+      printRaw('  Host: The Matrix');
+      printRaw('  Kernel: 6.6.6-matrix');
+      printRaw('  Shell: bio-sh 1.0');
+      printRaw('  Resolution: ' + window.innerWidth + 'x' + window.innerHeight);
+      printRaw('  Theme: [MATRIX] [GREEN] [CRT]');
+      printRaw('  Avatar: anime-spirit.gif');
+      printRaw('  Music: kanet_v_niz.mp3');
+    },
+    clear: function () {
+      output.innerHTML = '';
+    },
+    exit: function () {
+      printRaw('there is no escape.', 'err');
+    },
+    sudo: function () {
+      printRaw('taska is in the sudoers file. incident reported.', 'err');
+    }
+  };
+
+  function escapeHtml(s) {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function execCommand(raw) {
+    const line = raw.trim();
+    printRaw('taska@root:~$ ' + line, 'bright');
+    if (!line) return;
+    history.push(line);
+    hIndex = history.length;
+    const parts = line.split(/\s+/);
+    const name = parts[0].toLowerCase();
+    const fn = commands[name];
+    if (fn) {
+      fn(parts.slice(1));
+    } else {
+      printRaw('bio-sh: command not found: ' + name + ' - type "help"', 'err');
+    }
+  }
+
+  function startConsole() {
+    if (started) return;
+    started = true;
+    document.getElementById('presskey').style.display = 'none';
+    document.getElementById('workspace').style.display = 'grid';
+    startAudio();
+
+    printRaw('Type "help" to inspect this identity.', 'dim');
+    printRaw('');
+    printRaw(ASCII_LOGO, 'logo');
+    printRaw('');
+    printRaw(BIO);
+    printRaw('');
+    cmdInput.focus();
+  }
+
+  document.getElementById('presskey').addEventListener('click', startConsole);
+  document.getElementById('discordCopy').addEventListener('click', function () {
+    if (navigator.clipboard) navigator.clipboard.writeText('sex.ip').catch(function () {});
+  });
+  document.addEventListener('keydown', function (e) {
+    if (!started) { startConsole(); return; }
+    if (document.activeElement !== cmdInput) cmdInput.focus();
+  });
+
+  cmdInput.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') {
+      execCommand(cmdInput.value);
+      cmdInput.value = '';
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (hIndex > 0) { hIndex--; cmdInput.value = history[hIndex] || ''; }
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (hIndex < history.length - 1) { hIndex++; cmdInput.value = history[hIndex] || ''; }
+      else { hIndex = history.length; cmdInput.value = ''; }
+    } else if (e.key === 'l' && e.ctrlKey) {
+      e.preventDefault();
+      output.innerHTML = '';
+    }
+  });
+
+  consoleEl.addEventListener('click', function () {
+    cmdInput.focus();
+  });
+
+})();
+</script>
+
+</body>
+</html>
