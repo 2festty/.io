@@ -23,7 +23,6 @@
     body.font-1 .header h1, body.font-2 .header h1, body.font-3 .header h1,
     body.font-4 .header h1, body.font-5 .header h1 { font-family: inherit; }
 
-    /* RGB-сдвиг всей страницы */
     body.rgb-split { animation: rgbSplit 280ms steps(3) 1; }
     @keyframes rgbSplit {
         0% { text-shadow: none; filter: none; }
@@ -31,15 +30,11 @@
         60% { text-shadow: -4px 0 0 rgba(255,0,60,0.7), 4px 0 0 rgba(0,255,180,0.7); filter: hue-rotate(-30deg); }
         100% { text-shadow: none; filter: none; }
     }
-
-    /* блюр-пульс */
     body.blur-pulse { animation: blurPulse 350ms ease-in-out 1; }
     @keyframes blurPulse {
         0%,100% { filter: blur(0); }
         50%     { filter: blur(2px) brightness(1.1); }
     }
-
-    /* сильное искажение */
     body.mega-shift { animation: megaShift 400ms steps(6) 1; }
     @keyframes megaShift {
         0%   { transform: translate(0,0) skew(0); }
@@ -57,6 +52,7 @@
             radial-gradient(ellipse at 50% 100%, rgba(20, 40, 25, 0.55) 0%, transparent 70%),
             radial-gradient(ellipse at 50% 0%,   rgba(15, 25, 35, 0.65) 0%, transparent 70%),
             #08080a;
+        transition: background 0.6s ease;
     }
     .lain-layer { position: fixed; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
     .lain-img {
@@ -94,17 +90,18 @@
         100% { opacity: 0;    transform: scale(1.01); }
     }
     @keyframes lainBurn {
-        0%   { opacity: 0;    filter: contrast(1.15) saturate(0.55) brightness(0.75) invert(0); }
-        10%  { opacity: 1;    filter: contrast(2) saturate(0) brightness(1.4) invert(1); }
-        30%  { opacity: 0.6;  filter: contrast(1.5) saturate(2) brightness(0.9) hue-rotate(90deg); }
-        55%  { opacity: 1;    filter: contrast(2) saturate(0.3) brightness(1.2) invert(0.8); }
-        80%  { opacity: 0.4;  filter: contrast(1.5) saturate(1.5) brightness(0.8) hue-rotate(-60deg); }
-        100% { opacity: 0;    filter: contrast(1.15) saturate(0.55) brightness(0.75) invert(0); }
+        0%   { opacity: 0; filter: contrast(1.15) saturate(0.55) brightness(0.75) invert(0); }
+        10%  { opacity: 1; filter: contrast(2) saturate(0) brightness(1.4) invert(1); }
+        30%  { opacity: 0.6; filter: contrast(1.5) saturate(2) brightness(0.9) hue-rotate(90deg); }
+        55%  { opacity: 1; filter: contrast(2) saturate(0.3) brightness(1.2) invert(0.8); }
+        80%  { opacity: 0.4; filter: contrast(1.5) saturate(1.5) brightness(0.8) hue-rotate(-60deg); }
+        100% { opacity: 0; filter: contrast(1.15) saturate(0.55) brightness(0.75) invert(0); }
     }
     .grain {
         position: fixed; inset: -100%; z-index: 2; pointer-events: none;
         background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
         opacity: 0.16; animation: grain 0.55s steps(3) infinite;
+        transition: opacity 0.4s ease, animation-duration 0.4s;
     }
     @keyframes grain {
         0% { transform: translate(0,0); }
@@ -119,12 +116,15 @@
             rgba(0,0,0,0.4) 0px, rgba(0,0,0,0.4) 1px,
             transparent 1px, transparent 3px);
         opacity: 0.55;
+        transition: opacity 0.4s ease;
     }
     .glow {
         position: fixed; inset: 0; z-index: 4; pointer-events: none;
         box-shadow: inset 0 0 220px rgba(0, 20, 10, 0.95);
+        transition: box-shadow 0.5s ease;
     }
-    .dust { position: fixed; inset: 0; z-index: 5; pointer-events: none; overflow: hidden; }
+    .dust { position: fixed; inset: 0; z-index: 5; pointer-events: none; overflow: hidden;
+            transition: opacity 0.5s ease; }
     .dust span {
         position: absolute; width: 2px; height: 2px;
         background: rgba(150, 200, 160, 0.5);
@@ -147,18 +147,16 @@
     .wires path { fill: none; stroke-linecap: butt; }
 
     .wire-group, .knot-group {
-        transition: transform 0.14s steps(2);
-        will-change: transform;
+        transition: transform 0.14s steps(2), opacity 0.5s ease;
+        will-change: transform, opacity;
     }
 
     .wire-shadow { stroke: #000; opacity: 0.9; }
     .wire-body   { stroke: #0d0d0f; }
     .wire-hi     { stroke: rgba(90, 120, 95, 0.25); }
-
     .wire-near-shadow { stroke: #000; opacity: 0.95; }
     .wire-near-body   { stroke: #1a1a1d; }
     .wire-near-hi     { stroke: rgba(140, 180, 145, 0.35); }
-
     .knot    { fill: #0a0a0c; stroke: #000; stroke-width: 0.5; }
     .knot-hi { fill: none; stroke: rgba(120, 160, 125, 0.22); stroke-width: 0.6; }
     .knot-near    { fill: #141418; stroke: #000; stroke-width: 0.6; }
@@ -168,6 +166,7 @@
         position: fixed; z-index: 40; font-size: 12px;
         color: #2e4a34; letter-spacing: 2px;
         pointer-events: none; user-select: none; opacity: 0.85;
+        transition: opacity 0.5s ease;
     }
     .corner.tl { top: 14px; left: 16px; }
     .corner.tr { top: 14px; right: 16px; text-align: right; }
@@ -186,6 +185,7 @@
         position: relative; z-index: 10;
         max-width: 640px; margin: 0 auto;
         padding: 76px 24px 140px;
+        transition: opacity 0.5s ease;
     }
     .header {
         text-align: center; padding-bottom: 26px;
@@ -293,13 +293,9 @@
         30%  { opacity: 1; transform: translate(-50%,-50%) scale(1); }
         100% { opacity: 0; transform: translate(-50%,-50%) scale(1.4); }
     }
-
-    /* разрезание экрана на полосы */
     .slices {
         position: fixed; inset: 0; z-index: 205;
-        pointer-events: none;
-        overflow: hidden;
-        opacity: 0;
+        pointer-events: none; overflow: hidden; opacity: 0;
     }
     .slices.active { opacity: 1; }
     .slice {
@@ -307,13 +303,9 @@
         background: #050508;
         mix-blend-mode: multiply;
     }
-
-    /* случайные блоки помех */
     .blocks {
         position: fixed; inset: 0; z-index: 206;
-        pointer-events: none;
-        overflow: hidden;
-        opacity: 0;
+        pointer-events: none; overflow: hidden; opacity: 0;
     }
     .blocks.active { opacity: 1; }
     .block-rect {
@@ -324,8 +316,6 @@
             rgba(255,255,255,0.9));
         mix-blend-mode: overlay;
     }
-
-    /* быстрый сканлайн */
     .fast-scan {
         position: fixed; inset: 0; z-index: 207;
         pointer-events: none;
@@ -347,7 +337,6 @@
         80%  { opacity: 0.9; }
         100% { opacity: 0; background-position: 0 120%; }
     }
-
     .glitch-bars {
         position: fixed; inset: 0; z-index: 201;
         pointer-events: none; opacity: 0;
@@ -413,6 +402,54 @@
     body.storm .lines { opacity: 0.95; }
     body.storm .glow { box-shadow: inset 0 0 280px rgba(40, 0, 20, 0.95); }
 
+    /* ============================================================
+       РЕЖИМ ТИШИНЫ — резко всё исчезает, только зерно и пустота
+       ============================================================ */
+    body.silence .wire-group,
+    body.silence .knot-group {
+        opacity: 0 !important;
+        transition: transform 0.14s steps(2), opacity 0.06s;
+    }
+    body.silence .glow {
+        box-shadow: inset 0 0 300px rgba(0, 10, 5, 0.85);
+    }
+    body.silence .lines {
+        opacity: 0.15;
+    }
+    body.silence .grain {
+        opacity: 0.28;
+        animation-duration: 1.4s;
+    }
+    body.silence .dust {
+        opacity: 0.15;
+    }
+    body.silence .page {
+        opacity: 0.55;
+    }
+    body.silence .corner {
+        opacity: 0.35;
+    }
+    body.silence .bg {
+        background:
+            radial-gradient(ellipse at 50% 100%, rgba(8, 15, 10, 0.4) 0%, transparent 70%),
+            radial-gradient(ellipse at 50% 0%,   rgba(6, 10, 15, 0.5) 0%, transparent 70%),
+            #050507;
+    }
+    body.silence .flash,
+    body.silence .glitch-bars,
+    body.silence .tear,
+    body.silence .slices,
+    body.silence .blocks,
+    body.silence .fast-scan,
+    body.silence .rain,
+    body.silence .eye,
+    body.silence .flash-text {
+        display: none !important;
+    }
+    body.silence .lain-img {
+        opacity: 0 !important;
+    }
+
     @media (max-width: 600px) {
         .header h1 { font-size: 34px; letter-spacing: 6px; }
         .page { padding: 50px 18px 130px; }
@@ -433,7 +470,6 @@
 <div class="dust" id="dust"></div>
 
 <svg class="wires" viewBox="0 0 1000 1000" preserveAspectRatio="none" aria-hidden="true">
-
     <g class="wire-group">
         <path class="wire-shadow" stroke-width="5" d="M80,-400 Q150,500 60,1400"/>
         <path class="wire-body"   stroke-width="3" d="M80,-400 Q150,500 60,1400"/>
@@ -464,7 +500,6 @@
         <path class="wire-body"   stroke-width="3" d="M780,-400 Q840,540 760,1400"/>
         <path class="wire-hi"     stroke-width="0.8" d="M778,-400 Q838,540 758,1400"/>
     </g>
-
     <g class="wire-group">
         <path class="wire-near-shadow" stroke-width="8" d="M180,-400 Q120,500 360,1400"/>
         <path class="wire-near-body"   stroke-width="5" d="M180,-400 Q120,500 360,1400"/>
@@ -510,7 +545,6 @@
         <ellipse class="knot" cx="930" cy="700" rx="3.5" ry="4.5"/>
         <ellipse class="knot-hi" cx="928" cy="698" rx="3.5" ry="4.5"/>
     </g>
-
     <g class="knot-group">
         <ellipse class="knot-near" cx="160" cy="320" rx="6" ry="8"/>
         <ellipse class="knot-near-hi" cx="157" cy="317" rx="6" ry="8"/>
@@ -604,6 +638,7 @@
     /* ---------- звук ---------- */
     const bgm = document.getElementById('bgm');
     bgm.volume = 0.35;
+    const ORIGINAL_VOLUME = 0.35;
     function tryPlay() { bgm.play().catch(()=>{}); }
     tryPlay();
     document.addEventListener('click', tryPlay, { once: true });
@@ -713,7 +748,7 @@
         'https://i.pinimg.com/originals/4b/84/90/4b849073fd280c31a10239faaf056453.jpg',
         'https://avatars.mds.yandex.net/i?id=51620f8155779acb5871c7ed62731898_l-9985849-images-thumbs&n=13',
         'https://avatars.mds.yandex.net/i?id=741ce77a20c485ce11956bdfaf2f637a_l-4575625-images-thumbs&n=13',
-        'https://i.pinimg.com/736x/f8/9a/7f/f89a7c645c72fabc082c5f22fda475e2.jpg',
+        'https://i.pinimg.com/736x/f8/9a/7f/f89a7f645c72fabc082c5f22fda475e2.jpg',
         'https://avatars.mds.yandex.net/i?id=76318e48888006f0a84acc205b3631fb_l-4119111-images-thumbs&n=13'
     ];
 
@@ -742,9 +777,7 @@
         for (let i = 0; i < count; i++) setTimeout(showLainImage, i * (200 + Math.random()*200));
     }
 
-    /* ============================================================
-       СМЕНА ШРИФТА
-       ============================================================ */
+    /* ---------- смена шрифта ---------- */
     const glitchFonts = ['font-1','font-2','font-3','font-4','font-5'];
     let fontTimer = null;
     function fontGlitch(duration = 400) {
@@ -755,9 +788,7 @@
         fontTimer = setTimeout(() => document.body.classList.remove(f), duration);
     }
 
-    /* ============================================================
-       БАЗОВЫЙ ГЛИТЧ СИМВОЛОВ
-       ============================================================ */
+    /* ---------- базовый глитч символов ---------- */
     const glitchChars = 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ0123456789'.split('');
     function glitchTextNodes() {
         const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
@@ -785,9 +816,7 @@
         });
     }
 
-    /* ============================================================
-       ЯПОНСКИЙ ГЛИТЧ
-       ============================================================ */
+    /* ---------- японский глитч ---------- */
     const japanesePhrases = [
         '玲音', '私', 'あなたは誰ですか', '私はここにいる', '現実',
         '夢', '電脳', '神', '私は神', '何者', '電脳世界', '存在',
@@ -803,7 +832,6 @@
         'レイヤー7', '私は誰', '接続完了', '切断',
         '世界を閉じろ', '次の世界を開け', '現実なんてない'
     ];
-
     let jpBusy = false;
     function japaneseGlitch(duration = 800) {
         if (jpBusy) return;
@@ -814,9 +842,7 @@
         while (node = walker.nextNode()) {
             const p = node.parentElement;
             if (!p) continue;
-            if (p.closest('.flash-text') ||
-                p.closest('.corner') ||
-                p.closest('.syslog')) continue;
+            if (p.closest('.flash-text') || p.closest('.corner') || p.closest('.syslog')) continue;
             if (node.textContent.trim().length === 0) continue;
             nodes.push(node);
         }
@@ -834,9 +860,7 @@
         }, duration);
     }
 
-    /* ============================================================
-       РАЗРЕЗ ЭКРАНА НА ПОЛОСЫ
-       ============================================================ */
+    /* ---------- разрез экрана ---------- */
     function sliceScreen() {
         slicesEl.innerHTML = '';
         const count = 4 + Math.floor(Math.random() * 8);
@@ -857,9 +881,7 @@
         }, 280);
     }
 
-    /* ============================================================
-       СЛУЧАЙНЫЕ БЛОКИ ПОМЕХ
-       ============================================================ */
+    /* ---------- блоки помех ---------- */
     function randomBlocks() {
         blocksEl.innerHTML = '';
         const count = 3 + Math.floor(Math.random() * 8);
@@ -880,17 +902,13 @@
         }, 200 + Math.random() * 300);
     }
 
-    /* ============================================================
-       БЫСТРЫЙ СКАНЛАЙН
-       ============================================================ */
+    /* ---------- быстрый сканлайн ---------- */
     function fastScan() {
         fastScanEl.classList.remove('active'); void fastScanEl.offsetWidth;
         fastScanEl.classList.add('active');
     }
 
-    /* ============================================================
-       ДОЖДЬ
-       ============================================================ */
+    /* ---------- дождь ---------- */
     function resizeRain() {
         rainCanvas.width = window.innerWidth;
         rainCanvas.height = window.innerHeight;
@@ -931,33 +949,83 @@
         }
     }
 
-    /* ============================================================
-       ПЕРЕСТАНОВКА ПРОВОДОВ
-       ============================================================ */
+    /* ---------- перестановка проводов ---------- */
     const wireGroups = document.querySelectorAll('.wire-group');
     const knotGroups = document.querySelectorAll('.knot-group');
-
     function warpWires() {
         wireGroups.forEach(g => {
             const dx  = (Math.random() - 0.5) * 320;
             const dy  = (Math.random() - 0.5) * 220;
             const rot = (Math.random() - 0.5) * 10;
-            g.style.transition = 'transform 0.14s steps(2)';
+            g.style.transition = 'transform 0.14s steps(2), opacity 0.5s ease';
             g.style.transformOrigin = '50% 50%';
             g.style.transform = `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px) rotate(${rot.toFixed(2)}deg)`;
         });
         knotGroups.forEach(g => {
             const dx = (Math.random() - 0.5) * 320;
             const dy = (Math.random() - 0.5) * 220;
-            g.style.transition = 'transform 0.14s steps(2)';
+            g.style.transition = 'transform 0.14s steps(2), opacity 0.5s ease';
             g.style.transform = `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px)`;
         });
+    }
+
+    /* ============================================================
+       РЕЖИМ ТИШИНЫ
+       ============================================================ */
+    let silencing = false;
+
+    function forceClearEffects() {
+        // снимаем все классы активных эффектов
+        [flashEl, barsEl, tearEl, slicesEl, blocksEl, fastScanEl, eyeEl].forEach(el => {
+            if (!el) return;
+            el.classList.remove('active');
+            if (el.tagName !== 'CANVAS') el.innerHTML = '';
+        });
+        rainCanvas.classList.remove('active');
+        if (rainTimer) {
+            clearInterval(rainTimer);
+            rctx.clearRect(0, 0, rainCanvas.width, rainCanvas.height);
+        }
+        textEl.classList.remove('active');
+        // снимаем временные классы с body
+        document.body.classList.remove('shift', 'invert', 'mega-shift',
+                                       'rgb-split', 'blur-pulse', 'storm');
+        glitchFonts.forEach(f => document.body.classList.remove(f));
+        // убираем картинки
+        lainLayer.innerHTML = '';
+    }
+
+    function silenceMode(duration = 6000) {
+        if (silencing) return;
+        silencing = true;
+
+        // 1. Мгновенно гасим всё активное
+        forceClearEffects();
+
+        // 2. Включаем режим тишины
+        document.body.classList.add('silence');
+
+        // 3. Приглушаем музыку
+        bgm.volume = 0.05;
+
+        // 4. Возвращаемся через duration
+        setTimeout(() => {
+            document.body.classList.remove('silence');
+            bgm.volume = ORIGINAL_VOLUME;
+
+            // лёгкий возврат: плавное появление проводов через 0.4s
+            // (уже через CSS-переход opacity 0.5s ease)
+
+            // снимаем флаг с небольшой задержкой
+            setTimeout(() => { silencing = false; }, 600);
+        }, duration);
     }
 
     /* ============================================================
        СБОИ
        ============================================================ */
     function microGlitch() {
+        if (silencing) return;
         document.body.classList.add('shift');
         if (Math.random() < 0.6) showLainImage();
         warpWires();
@@ -970,6 +1038,7 @@
     }
 
     function midGlitch() {
+        if (silencing) return;
         document.body.classList.add('storm');
 
         const c = flashColors[Math.floor(Math.random() * flashColors.length)];
@@ -1010,6 +1079,7 @@
     }
 
     function bigGlitch() {
+        if (silencing) return;
         document.body.classList.add('storm');
         document.body.classList.add('mega-shift');
         setTimeout(() => document.body.classList.remove('mega-shift'), 420);
@@ -1065,12 +1135,20 @@
         setTimeout(() => document.body.classList.remove('shift'), 250);
 
         setTimeout(() => document.body.classList.remove('storm'), 900);
+
+        // ✦ контраст: после большого сбоя иногда внезапно наступает тишина
+        if (Math.random() < 0.4) {
+            setTimeout(() => {
+                silenceMode(4000 + Math.random() * 4000);
+            }, 1200 + Math.random() * 1000);
+        }
     }
 
     function chaosBurst() {
-        // мгновенный набор мелких эффектов подряд
+        if (silencing) return;
         for (let i = 0; i < 3; i++) {
             setTimeout(() => {
+                if (silencing) return;
                 randomBlocks();
                 if (Math.random() < 0.5) fastScan();
                 if (Math.random() < 0.5) sliceScreen();
@@ -1080,6 +1158,10 @@
     }
 
     function scheduleGlitch() {
+        if (silencing) {
+            setTimeout(scheduleGlitch, 800);
+            return;
+        }
         const r = Math.random();
         let next;
         if (r < 0.28) {
@@ -1092,6 +1174,7 @@
             bigGlitch();
             if (Math.random() < 0.7) {
                 setTimeout(() => {
+                    if (silencing) return;
                     midGlitch();
                     showLainBurst(2);
                     chaosBurst();
@@ -1103,6 +1186,24 @@
     }
     setTimeout(scheduleGlitch, 1800);
 
+    /* ============================================================
+       РАСПИСАНИЕ ТИШИНЫ — отдельный планировщик
+       ============================================================ */
+    function scheduleSilence() {
+        const delay = 30000 + Math.random() * 35000; // 30–65 сек
+        setTimeout(() => {
+            if (!silencing) {
+                silenceMode(4500 + Math.random() * 4500); // 4.5–9 сек тишины
+            }
+            scheduleSilence();
+        }, delay);
+    }
+    // первый раз — пораньше, чтобы услышать эффект
+    setTimeout(() => {
+        if (!silencing) silenceMode(5000);
+        scheduleSilence();
+    }, 22000);
+
     /* ---- шёпот ---- */
     const whispers = [
         'ты уже здесь был','кто ты','ты помнишь',
@@ -1111,6 +1212,7 @@
         'ты не настоящий','проснись','где ты'
     ];
     setInterval(() => {
+        if (silencing) return;
         if (Math.random() > 0.5) return;
         textEl.textContent = whispers[Math.floor(Math.random() * whispers.length)];
         textEl.style.color = 'rgba(180, 220, 190, 0.9)';
@@ -1122,26 +1224,31 @@
 
     /* ---- автономные срабатывания ---- */
     setInterval(() => {
+        if (silencing) return;
         if (Math.random() > 0.5) return;
         showLainImage();
     }, 4000);
 
     setInterval(() => {
+        if (silencing) return;
         if (Math.random() > 0.4) return;
         randomBlocks();
     }, 5500);
 
     setInterval(() => {
+        if (silencing) return;
         if (Math.random() > 0.4) return;
         sliceScreen();
     }, 7000);
 
     setInterval(() => {
+        if (silencing) return;
         if (Math.random() > 0.35) return;
         fastScan();
     }, 6000);
 
     setInterval(() => {
+        if (silencing) return;
         if (Math.random() > 0.3) return;
         document.body.classList.add('rgb-split');
         setTimeout(() => document.body.classList.remove('rgb-split'), 300);
