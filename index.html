@@ -3,640 +3,1149 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>taska@root:~$</title>
+<title>Taska // bio</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=VT323&family=Share+Tech+Mono&family=Source+Code+Pro:wght@500;700&display=swap');
-
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-
-  html, body {
-    height: 100%;
-    overflow: hidden;
-    background: #000;
-    font-family: 'Source Code Pro', 'Share Tech Mono', monospace;
-    color: #d3e9dc;
-  }
-
-  #scene {
-    position: fixed;
-    inset: 0;
-    z-index: 0;
-  }
-
-  .vignette {
-    position: fixed;
-    inset: 0;
-    background: radial-gradient(ellipse at center, transparent 54%, rgba(0,0,0,0.32) 100%);
-    pointer-events: none;
-    z-index: 2;
-  }
-
-  .scanlines {
-    position: fixed;
-    inset: 0;
-    background: repeating-linear-gradient(
-      0deg,
-      rgba(0, 0, 0, 0.12) 0px,
-      rgba(0, 0, 0, 0.12) 1px,
-      transparent 1px,
-      transparent 3px
-    );
-    pointer-events: none;
-    z-index: 3;
-  }
-
-  .crt {
-    position: fixed;
-    inset: 0;
-    box-shadow: inset 0 0 160px rgba(0, 255, 65, 0.09);
-    pointer-events: none;
-    z-index: 3;
-  }
-
-  .noise {
-    position: fixed;
-    inset: 0;
-    z-index: 3;
-    pointer-events: none;
-    opacity: 0.018;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  }
-
-  #boot {
-    position: fixed;
-    inset: 0;
-    z-index: 20;
-    background: #000;
-    padding: 4vh 4vw;
-    font-size: clamp(12px, 1.5vw, 17px);
-    line-height: 1.6;
-    white-space: pre-wrap;
-    text-shadow: none;
-    overflow: hidden;
-  }
-
-  #boot .cursor {
-    display: inline-block;
-    width: 0.55em;
-    height: 1.1em;
-    background: #00ff41;
-    vertical-align: text-bottom;
-    animation: blink 0.7s steps(1) infinite;
-  }
-
-  @keyframes blink { 50% { opacity: 0; } }
-
-  #presskey {
-    position: fixed;
-    inset: 0;
-    z-index: 21;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    background: rgba(0, 0, 0, 0.88);
-    font-family: 'VT323', monospace;
-    font-size: clamp(18px, 2.8vw, 32px);
-    letter-spacing: 5px;
-    color: #d3e9dc;
-    animation: pulse 1.6s ease-in-out infinite;
-    user-select: none;
-  }
-
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.3; }
-  }
-
-  #workspace {
-    position: fixed;
-    inset: 4vh 4vw;
-    z-index: 10;
-    display: none;
-    grid-template-columns: minmax(0, 1.45fr) minmax(260px, .75fr);
-    gap: clamp(24px, 4vw, 64px);
-    align-items: stretch;
-  }
-
-  #console {
-    min-width: 0;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-    padding: clamp(16px, 2.2vw, 32px);
-    font-size: clamp(12px, 1.4vw, 16px);
-    background: rgba(0, 8, 4, .78);
-    border: 1px solid rgba(0, 255, 80, .23);
-    box-shadow: 0 18px 70px rgba(0, 0, 0, .48);
-  }
-
-  #inputline {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex-shrink: 0;
-    min-height: 54px;
-    margin-bottom: 22px;
-    padding: 10px 16px;
-    border: 1px solid rgba(0, 255, 80, 0.34);
-    border-left: 3px solid #67e8bd;
-    background: linear-gradient(100deg, rgba(1, 18, 9, 0.92), rgba(4, 10, 7, 0.78));
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.42), inset 0 0 24px rgba(0, 255, 65, 0.045);
-    text-shadow: none;
-    transition: border-color .18s ease, box-shadow .18s ease;
-  }
-
-  #inputline:focus-within {
-    border-color: rgba(0, 255, 100, 0.8);
-    border-left-color: #67e8bd;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.48), 0 0 24px rgba(0, 255, 65, 0.12);
-  }
-
-  #output {
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
-    white-space: pre-wrap;
-    word-break: normal;
-    overflow-wrap: anywhere;
-    padding-bottom: 8px;
-    scrollbar-width: thin;
-    scrollbar-color: #00ff41 #001100;
-    line-height: 1.45;
-    font-variant-ligatures: none;
-  }
-
-  #output::-webkit-scrollbar { width: 5px; }
-  #output::-webkit-scrollbar-thumb { background: #00ff41; }
-  #output::-webkit-scrollbar-track { background: #001100; }
-
-  #output .dim { color: rgba(0, 255, 65, 0.5); }
-  #output .bright { color: #9de8c4; }
-  #output .white { color: #f1f5f2; }
-  #output .err { color: #ff8d91; }
-  #output .cyan { color: #86d9d0; }
-
-  #prompt {
-    color: #72dbb6;
-    white-space: nowrap;
-    flex-shrink: 0;
-  }
-
-  #cmd {
-    flex: 1;
-    background: transparent;
-    border: none;
-    outline: none;
-    color: #f1f5f2;
-    font: inherit;
-    caret-color: #00ff41;
-    min-width: 0;
-  }
-
-  #cmd::placeholder { color: rgba(214, 255, 231, .32); }
-
-  .logo {
-    display: block;
-    color: #9de8c4;
-    font-weight: 700;
-    font-family: 'Share Tech Mono', monospace;
-    font-size: clamp(7px, 1.15vw, 13px);
-    line-height: 1.18;
-    white-space: pre;
-  }
-
-  .avatar-pop {
-    display: inline-block;
-    border: 1px solid rgba(0, 255, 65, 0.55);
-    padding: 2px;
-    margin: 4px 0;
-    box-shadow: 0 0 18px rgba(0, 255, 65, 0.3);
-  }
-
-  .avatar-pop img {
-    display: block;
-    width: min(52vw, 330px);
-    height: min(52vw, 330px);
-    object-fit: cover;
-    filter: grayscale(.25) brightness(.88) contrast(1.12) saturate(.82) sepia(.18) hue-rotate(68deg);
-  }
-
-  .profile {
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 18px;
-    padding: 24px;
-    border-left: 1px solid rgba(0, 255, 80, .26);
-    color: #c9ddd0;
-  }
-
-  .profile .avatar-pop {
-    padding: 5px;
-    border-color: rgba(105, 224, 173, .65);
-    box-shadow: 0 0 0 1px rgba(105, 224, 173, .12), 0 18px 50px rgba(0, 0, 0, .42);
-  }
-
-  .profile .avatar-pop img {
-    width: clamp(170px, 21vw, 300px);
-    height: clamp(170px, 21vw, 300px);
-  }
-
-  .profile-name {
-    color: #e5f0e9;
-    font-size: clamp(24px, 3vw, 38px);
-    font-weight: 700;
-  }
-
-  .profile-discord {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    color: #9de8c4;
-    font-size: 15px;
-    padding: 10px 14px;
-    border: 1px solid rgba(105, 224, 173, .3);
-    background: rgba(0, 14, 8, .58);
-    cursor: pointer;
-  }
-
-  .profile-discord:hover { background: rgba(0, 45, 26, .72); }
-  .profile-discord svg { width: 20px; height: 20px; fill: currentColor; }
-  .profile-label { color: rgba(201, 221, 208, .48); font-size: 11px; }
-
-  .avatar-pop.is-large {
-    display: block;
-    width: fit-content;
-    margin: 10px 0;
-  }
-
-  .avatar-pop.is-large img {
-    width: min(38vw, 280px);
-    height: min(38vw, 280px);
-  }
-
-  @media (max-width: 600px) {
-    #workspace {
-      inset: 14px 12px;
-      grid-template-columns: minmax(0, 1fr);
-      grid-template-rows: minmax(0, 1fr) auto;
-      gap: 10px;
+    @import url('https://fonts.googleapis.com/css2?family=VT323&family=IBM+Plex+Mono:wght@300;400&family=JetBrains+Mono:wght@300;400&family=Ubuntu+Mono&family=Major+Mono+Display&family=Share+Tech+Mono&display=swap');
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { overflow-x: hidden; }
+    body {
+        font-family: 'VT323', monospace;
+        background-color: #08080a; color: #9ba89b;
+        font-size: 18px; line-height: 1.65;
+        cursor: crosshair; min-height: 100vh;
+        transition: filter 0.08s linear;
     }
-    #console { padding: 12px; }
-    #inputline { min-height: 48px; margin-bottom: 16px; padding: 8px 10px; gap: 8px; }
-    #prompt { font-size: 11px; }
-    #output { line-height: 1.4; }
-    .profile {
-      flex-direction: row;
-      justify-content: flex-start;
-      gap: 12px;
-      padding: 8px 12px;
-      border-left: 0;
-      border-top: 1px solid rgba(0, 255, 80, .26);
+    body.font-1 { font-family: 'IBM Plex Mono', monospace; }
+    body.font-2 { font-family: 'JetBrains Mono', monospace; letter-spacing: -1px; }
+    body.font-3 { font-family: 'Ubuntu Mono', monospace; }
+    body.font-4 { font-family: 'Major Mono Display', monospace; letter-spacing: 2px; }
+    body.font-5 { font-family: 'Share Tech Mono', monospace; }
+    body.font-1 .header h1, body.font-2 .header h1, body.font-3 .header h1,
+    body.font-4 .header h1, body.font-5 .header h1 { font-family: inherit; }
+
+    /* RGB-сдвиг всей страницы */
+    body.rgb-split { animation: rgbSplit 280ms steps(3) 1; }
+    @keyframes rgbSplit {
+        0% { text-shadow: none; filter: none; }
+        30% { text-shadow: 3px 0 0 rgba(255,0,60,0.9), -3px 0 0 rgba(0,255,180,0.9); filter: hue-rotate(20deg); }
+        60% { text-shadow: -4px 0 0 rgba(255,0,60,0.7), 4px 0 0 rgba(0,255,180,0.7); filter: hue-rotate(-30deg); }
+        100% { text-shadow: none; filter: none; }
     }
-    .profile .avatar-pop { padding: 2px; margin: 0; }
-    .profile .avatar-pop img { width: 64px; height: 64px; }
-    .profile-name { font-size: 20px; }
-    .profile-label { display: none; }
-    .profile-discord { margin-left: auto; padding: 7px 9px; font-size: 12px; }
-    .profile-discord svg { width: 17px; height: 17px; }
-    .avatar-pop.is-large img { width: min(68vw, 250px); height: min(68vw, 250px); }
-  }
+
+    /* блюр-пульс */
+    body.blur-pulse { animation: blurPulse 350ms ease-in-out 1; }
+    @keyframes blurPulse {
+        0%,100% { filter: blur(0); }
+        50%     { filter: blur(2px) brightness(1.1); }
+    }
+
+    /* сильное искажение */
+    body.mega-shift { animation: megaShift 400ms steps(6) 1; }
+    @keyframes megaShift {
+        0%   { transform: translate(0,0) skew(0); }
+        15%  { transform: translate(-18px, 6px) skew(3deg); }
+        30%  { transform: translate(14px, -8px) skew(-4deg); }
+        45%  { transform: translate(-10px, -12px) skew(2deg); }
+        60%  { transform: translate(20px, 8px) skew(-3deg); }
+        75%  { transform: translate(-6px, 10px) skew(1deg); }
+        100% { transform: translate(0,0) skew(0); }
+    }
+
+    .bg {
+        position: fixed; inset: 0; z-index: 0;
+        background:
+            radial-gradient(ellipse at 50% 100%, rgba(20, 40, 25, 0.55) 0%, transparent 70%),
+            radial-gradient(ellipse at 50% 0%,   rgba(15, 25, 35, 0.65) 0%, transparent 70%),
+            #08080a;
+    }
+    .lain-layer { position: fixed; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
+    .lain-img {
+        position: absolute; top: 0; left: 0;
+        width: 100vw; height: 100vh;
+        object-fit: cover; opacity: 0; pointer-events: none;
+        will-change: opacity;
+        filter: contrast(1.15) saturate(0.55) brightness(0.75);
+    }
+    .lain-img.show  { animation: lainFull var(--dur, 700ms) steps(6) 1; }
+    .lain-img.hit   { animation: lainHit  var(--dur, 500ms) steps(4) 1; }
+    .lain-img.soft  { animation: lainSoft var(--dur, 900ms) ease-in-out 1; }
+    .lain-img.burn  { animation: lainBurn var(--dur, 400ms) steps(3) 1; }
+    @keyframes lainFull {
+        0%   { opacity: 0;    transform: scale(1.04); }
+        12%  { opacity: 0.95; } 22% { opacity: 0.35; }
+        38%  { opacity: 1; }    52% { opacity: 0.45; }
+        68%  { opacity: 0.9; }  82% { opacity: 0.5; }
+        100% { opacity: 0;    transform: scale(1); }
+    }
+    @keyframes lainHit {
+        0% { opacity: 0; }
+        8% { opacity: 1; transform: scale(1.06); }
+        25% { opacity: 0.2; }
+        40% { opacity: 1; transform: scale(0.99); }
+        60% { opacity: 0.3; }
+        80% { opacity: 0.85; }
+        100% { opacity: 0; transform: scale(1.02); }
+    }
+    @keyframes lainSoft {
+        0%   { opacity: 0;    transform: scale(1.03); }
+        25%  { opacity: 0.85; }
+        50%  { opacity: 0.95; transform: scale(1); }
+        75%  { opacity: 0.7;  }
+        100% { opacity: 0;    transform: scale(1.01); }
+    }
+    @keyframes lainBurn {
+        0%   { opacity: 0;    filter: contrast(1.15) saturate(0.55) brightness(0.75) invert(0); }
+        10%  { opacity: 1;    filter: contrast(2) saturate(0) brightness(1.4) invert(1); }
+        30%  { opacity: 0.6;  filter: contrast(1.5) saturate(2) brightness(0.9) hue-rotate(90deg); }
+        55%  { opacity: 1;    filter: contrast(2) saturate(0.3) brightness(1.2) invert(0.8); }
+        80%  { opacity: 0.4;  filter: contrast(1.5) saturate(1.5) brightness(0.8) hue-rotate(-60deg); }
+        100% { opacity: 0;    filter: contrast(1.15) saturate(0.55) brightness(0.75) invert(0); }
+    }
+    .grain {
+        position: fixed; inset: -100%; z-index: 2; pointer-events: none;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+        opacity: 0.16; animation: grain 0.55s steps(3) infinite;
+    }
+    @keyframes grain {
+        0% { transform: translate(0,0); }
+        25% { transform: translate(-3%,-3%); }
+        50% { transform: translate(3%,2%); }
+        75% { transform: translate(-2%,3%); }
+        100% { transform: translate(2%,-2%); }
+    }
+    .lines {
+        position: fixed; inset: 0; z-index: 3; pointer-events: none;
+        background: repeating-linear-gradient(0deg,
+            rgba(0,0,0,0.4) 0px, rgba(0,0,0,0.4) 1px,
+            transparent 1px, transparent 3px);
+        opacity: 0.55;
+    }
+    .glow {
+        position: fixed; inset: 0; z-index: 4; pointer-events: none;
+        box-shadow: inset 0 0 220px rgba(0, 20, 10, 0.95);
+    }
+    .dust { position: fixed; inset: 0; z-index: 5; pointer-events: none; overflow: hidden; }
+    .dust span {
+        position: absolute; width: 2px; height: 2px;
+        background: rgba(150, 200, 160, 0.5);
+        border-radius: 50%;
+        box-shadow: 0 0 4px rgba(120, 200, 140, 0.4);
+        animation: float linear infinite;
+    }
+    @keyframes float {
+        0%   { transform: translateY(0) translateX(0); opacity: 0; }
+        15%  { opacity: 0.8; }
+        85%  { opacity: 0.6; }
+        100% { transform: translateY(-120vh) translateX(30px); opacity: 0; }
+    }
+
+    .wires {
+        position: fixed; inset: 0; z-index: 30;
+        pointer-events: none; width: 100%; height: 100%;
+        overflow: visible;
+    }
+    .wires path { fill: none; stroke-linecap: butt; }
+
+    .wire-group, .knot-group {
+        transition: transform 0.14s steps(2);
+        will-change: transform;
+    }
+
+    .wire-shadow { stroke: #000; opacity: 0.9; }
+    .wire-body   { stroke: #0d0d0f; }
+    .wire-hi     { stroke: rgba(90, 120, 95, 0.25); }
+
+    .wire-near-shadow { stroke: #000; opacity: 0.95; }
+    .wire-near-body   { stroke: #1a1a1d; }
+    .wire-near-hi     { stroke: rgba(140, 180, 145, 0.35); }
+
+    .knot    { fill: #0a0a0c; stroke: #000; stroke-width: 0.5; }
+    .knot-hi { fill: none; stroke: rgba(120, 160, 125, 0.22); stroke-width: 0.6; }
+    .knot-near    { fill: #141418; stroke: #000; stroke-width: 0.6; }
+    .knot-near-hi { fill: none; stroke: rgba(150, 190, 155, 0.3); stroke-width: 0.8; }
+
+    .corner {
+        position: fixed; z-index: 40; font-size: 12px;
+        color: #2e4a34; letter-spacing: 2px;
+        pointer-events: none; user-select: none; opacity: 0.85;
+    }
+    .corner.tl { top: 14px; left: 16px; }
+    .corner.tr { top: 14px; right: 16px; text-align: right; }
+    .corner.bl { bottom: 14px; left: 16px; }
+    .corner.br { bottom: 14px; right: 16px; text-align: right; }
+    .dot {
+        display: inline-block; width: 5px; height: 5px;
+        background: #4a8a5a; border-radius: 50%;
+        margin-right: 6px; vertical-align: middle;
+        box-shadow: 0 0 6px #4a8a5a;
+        animation: pulse 2.4s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.25; } }
+
+    .page {
+        position: relative; z-index: 10;
+        max-width: 640px; margin: 0 auto;
+        padding: 76px 24px 140px;
+    }
+    .header {
+        text-align: center; padding-bottom: 26px;
+        border-bottom: 1px solid #1a2a1a; margin-bottom: 48px;
+    }
+    .header .kanji {
+        font-size: 15px; color: #3a5a3a;
+        letter-spacing: 14px; margin-bottom: 10px; opacity: 0.85;
+    }
+    .header h1 {
+        font-size: 50px; color: #c2d0c2;
+        letter-spacing: 12px; font-weight: normal;
+        text-shadow: 0 0 10px rgba(100, 180, 120, 0.4), 0 0 30px rgba(80, 150, 100, 0.15);
+        margin-bottom: 8px;
+    }
+    .header .sub { font-size: 14px; color: #4a5a4a; letter-spacing: 4px; }
+    .header .meta {
+        margin-top: 14px; font-size: 12px;
+        color: #2e4a34; letter-spacing: 3px;
+    }
+    .block {
+        margin-bottom: 40px; padding: 4px 0 4px 22px;
+        position: relative; transition: text-shadow 0.6s ease;
+    }
+    .block::before {
+        content: ''; position: absolute;
+        left: 0; top: 0; bottom: 0; width: 1px;
+        background: linear-gradient(to bottom, transparent, #1f3a25 20%, #1f3a25 80%, transparent);
+    }
+    .block:hover { text-shadow: 0 0 8px rgba(110, 180, 130, 0.25); }
+    .block .label {
+        font-size: 13px; color: #3a5a3a;
+        letter-spacing: 3px; margin-bottom: 10px;
+        display: flex; align-items: baseline; gap: 12px;
+    }
+    .block .label .num { color: #2a4a30; }
+    .block .label .kanji-sm {
+        color: #2e4a34; letter-spacing: 4px;
+        font-size: 14px; margin-left: auto; opacity: 0.7;
+    }
+    .block p { color: #8a9a8a; margin-bottom: 12px; }
+    .block p:last-child { margin-bottom: 0; }
+    .g { color: #7ab87a; }
+    .d { color: #4a4a5a; }
+    .blink {
+        display: inline-block; width: 8px; height: 14px;
+        background: #7ab87a; vertical-align: middle; margin-left: 4px;
+        animation: b 1s step-end infinite;
+    }
+    @keyframes b { 50% { opacity: 0; } }
+    .divider {
+        text-align: center; color: #2e4a34;
+        letter-spacing: 10px; font-size: 12px;
+        margin: 30px 0; user-select: none;
+    }
+    .syslog {
+        margin-top: 10px; padding: 16px 18px;
+        border: 1px solid #14261a;
+        background: rgba(10, 20, 12, 0.35);
+        font-size: 13px; color: #4a6a52;
+        letter-spacing: 1px; min-height: 120px;
+    }
+    .syslog .line { display: block; opacity: 0; animation: fadeIn 0.4s forwards; }
+    .syslog .line::before { content: '> '; color: #2e4a34; }
+    @keyframes fadeIn { to { opacity: 1; } }
+    .foot {
+        margin-top: 50px; padding-top: 26px;
+        border-top: 1px solid #1a2a1a;
+        text-align: center; font-size: 13px;
+        color: #3a4a3a; letter-spacing: 2px;
+    }
+    .foot .small {
+        display: block; margin-top: 10px;
+        font-size: 11px; color: #24382a; letter-spacing: 3px;
+    }
+
+    .flash {
+        position: fixed; inset: 0; z-index: 200;
+        pointer-events: none; opacity: 0;
+        mix-blend-mode: screen;
+    }
+    .flash.active { animation: flashHit var(--dur, 300ms) steps(2) 1; }
+    @keyframes flashHit {
+        0% { opacity: 0; } 20% { opacity: 0.85; }
+        40% { opacity: 0.1; } 60% { opacity: 0.7; }
+        80% { opacity: 0.15; } 100% { opacity: 0; }
+    }
+    .rain {
+        position: fixed; inset: 0; z-index: 199;
+        pointer-events: none; opacity: 0;
+        transition: opacity 0.25s; mix-blend-mode: screen;
+    }
+    .rain.active { opacity: 0.55; }
+    .eye {
+        position: fixed; top: 50%; left: 50%;
+        width: 200vmin; height: 200vmin;
+        transform: translate(-50%, -50%); border-radius: 50%;
+        background: radial-gradient(circle, transparent 25%,
+            rgba(255, 0, 40, 0.35) 38%, rgba(255, 0, 40, 0.1) 55%, transparent 65%);
+        z-index: 198; pointer-events: none; opacity: 0;
+    }
+    .eye.active { animation: eyePulse 800ms ease-out 1; }
+    @keyframes eyePulse {
+        0%   { opacity: 0; transform: translate(-50%,-50%) scale(0.4); }
+        30%  { opacity: 1; transform: translate(-50%,-50%) scale(1); }
+        100% { opacity: 0; transform: translate(-50%,-50%) scale(1.4); }
+    }
+
+    /* разрезание экрана на полосы */
+    .slices {
+        position: fixed; inset: 0; z-index: 205;
+        pointer-events: none;
+        overflow: hidden;
+        opacity: 0;
+    }
+    .slices.active { opacity: 1; }
+    .slice {
+        position: absolute; left: -10%; width: 120%;
+        background: #050508;
+        mix-blend-mode: multiply;
+    }
+
+    /* случайные блоки помех */
+    .blocks {
+        position: fixed; inset: 0; z-index: 206;
+        pointer-events: none;
+        overflow: hidden;
+        opacity: 0;
+    }
+    .blocks.active { opacity: 1; }
+    .block-rect {
+        position: absolute;
+        background: linear-gradient(90deg,
+            rgba(255,255,255,0.9),
+            rgba(120,200,140,0.7),
+            rgba(255,255,255,0.9));
+        mix-blend-mode: overlay;
+    }
+
+    /* быстрый сканлайн */
+    .fast-scan {
+        position: fixed; inset: 0; z-index: 207;
+        pointer-events: none;
+        background: linear-gradient(180deg,
+            transparent 0%,
+            rgba(200, 240, 200, 0.18) 45%,
+            rgba(255, 255, 255, 0.5) 50%,
+            rgba(200, 240, 200, 0.18) 55%,
+            transparent 100%);
+        background-size: 100% 15%;
+        background-repeat: no-repeat;
+        opacity: 0;
+        mix-blend-mode: screen;
+    }
+    .fast-scan.active { animation: fastScanRun 350ms linear 1; }
+    @keyframes fastScanRun {
+        0%   { opacity: 0; background-position: 0 -20%; }
+        20%  { opacity: 0.9; }
+        80%  { opacity: 0.9; }
+        100% { opacity: 0; background-position: 0 120%; }
+    }
+
+    .glitch-bars {
+        position: fixed; inset: 0; z-index: 201;
+        pointer-events: none; opacity: 0;
+        background-image: repeating-linear-gradient(0deg,
+            transparent 0px, transparent 8px,
+            rgba(255,255,255,0.9) 8px, rgba(255,255,255,0.9) 10px,
+            transparent 10px, transparent 22px);
+        mix-blend-mode: overlay;
+    }
+    .glitch-bars.active { animation: barsRun 400ms steps(5) 1; }
+    @keyframes barsRun {
+        0%   { opacity: 0; transform: translateY(0); }
+        20%  { opacity: 0.6; transform: translateY(-30px); }
+        40%  { opacity: 0.2; transform: translateY(20px); }
+        60%  { opacity: 0.55; transform: translateY(-10px); }
+        80%  { opacity: 0.3; transform: translateY(40px); }
+        100% { opacity: 0; transform: translateY(0); }
+    }
+    .tear {
+        position: fixed; z-index: 203; pointer-events: none;
+        left: 0; right: 0; height: 0;
+        background: linear-gradient(90deg, transparent 0%,
+            rgba(255, 255, 255, 0.05) 20%, rgba(255, 255, 255, 0.9) 50%,
+            rgba(255, 255, 255, 0.05) 80%, transparent 100%);
+        mix-blend-mode: difference; opacity: 0;
+    }
+    .tear.active { animation: tearSlide 350ms steps(4) 1; }
+    @keyframes tearSlide {
+        0%   { opacity: 0; height: 0; top: 50%; }
+        20%  { opacity: 0.95; height: 8px; top: 40%; }
+        50%  { opacity: 0.6; height: 2px; top: 60%; }
+        80%  { opacity: 0.9; height: 12px; top: 55%; }
+        100% { opacity: 0; height: 0; top: 50%; }
+    }
+    .flash-text {
+        position: fixed; z-index: 202; pointer-events: none;
+        color: #d8e8d8; font-size: 42px; letter-spacing: 12px;
+        text-shadow: 2px 0 0 rgba(255, 0, 60, 0.7),
+                     -2px 0 0 rgba(0, 255, 130, 0.7),
+                     0 0 20px rgba(255,255,255,0.4);
+        opacity: 0; white-space: nowrap;
+        top: 50%; left: 50%; transform: translate(-50%, -50%);
+    }
+    .flash-text.active { animation: flashText 500ms steps(3) 1; }
+    @keyframes flashText {
+        0%   { opacity: 0; transform: translate(-50%, -50%) scale(1.2); }
+        20%  { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        40%  { opacity: 0.3; transform: translate(-52%, -50%) scale(1); }
+        60%  { opacity: 0.9; transform: translate(-48%, -50%) scale(1); }
+        80%  { opacity: 0.4; transform: translate(-50%, -50%) scale(1); }
+        100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+    }
+    body.invert { filter: invert(1) hue-rotate(90deg); }
+    body.shift { animation: shiftBody 250ms steps(3) 1; }
+    @keyframes shiftBody {
+        0%   { transform: translate(0,0); }
+        25%  { transform: translate(-6px, 3px); }
+        50%  { transform: translate(5px, -4px); }
+        75%  { transform: translate(-3px, -3px); }
+        100% { transform: translate(0,0); }
+    }
+    body.storm .grain { opacity: 0.45; animation-duration: 0.15s; }
+    body.storm .lines { opacity: 0.95; }
+    body.storm .glow { box-shadow: inset 0 0 280px rgba(40, 0, 20, 0.95); }
+
+    @media (max-width: 600px) {
+        .header h1 { font-size: 34px; letter-spacing: 6px; }
+        .page { padding: 50px 18px 130px; }
+        body { font-size: 16px; }
+        .corner.tr, .corner.br { display: none; }
+        .block { padding-left: 16px; }
+        .flash-text { font-size: 26px; letter-spacing: 6px; }
+    }
 </style>
 </head>
 <body>
 
-<canvas id="scene"></canvas>
+<div class="bg"></div>
+<div class="lain-layer" id="lainLayer"></div>
+<div class="grain"></div>
+<div class="lines"></div>
+<div class="glow"></div>
+<div class="dust" id="dust"></div>
 
-<div class="vignette"></div>
-<div class="scanlines"></div>
-<div class="crt"></div>
-<div class="noise"></div>
+<svg class="wires" viewBox="0 0 1000 1000" preserveAspectRatio="none" aria-hidden="true">
 
-<div id="boot"></div>
-<div id="presskey">[ PRESS ANY KEY TO ACCESS SYSTEM ]</div>
+    <g class="wire-group">
+        <path class="wire-shadow" stroke-width="5" d="M80,-400 Q150,500 60,1400"/>
+        <path class="wire-body"   stroke-width="3" d="M80,-400 Q150,500 60,1400"/>
+        <path class="wire-hi"     stroke-width="0.8" d="M78,-400 Q148,500 58,1400"/>
+    </g>
+    <g class="wire-group">
+        <path class="wire-shadow" stroke-width="4" d="M230,-400 Q190,480 260,1400"/>
+        <path class="wire-body"   stroke-width="2.5" d="M230,-400 Q190,480 260,1400"/>
+        <path class="wire-hi"     stroke-width="0.7" d="M232,-400 Q192,480 262,1400"/>
+    </g>
+    <g class="wire-group">
+        <path class="wire-shadow" stroke-width="3" d="M600,-400 Q550,470 620,1400"/>
+        <path class="wire-body"   stroke-width="2" d="M600,-400 Q550,470 620,1400"/>
+        <path class="wire-hi"     stroke-width="0.6" d="M602,-400 Q552,470 622,1400"/>
+    </g>
+    <g class="wire-group">
+        <path class="wire-shadow" stroke-width="4" d="M940,-400 Q890,500 970,1400"/>
+        <path class="wire-body"   stroke-width="2.5" d="M940,-400 Q890,500 970,1400"/>
+        <path class="wire-hi"     stroke-width="0.7" d="M942,-400 Q892,500 972,1400"/>
+    </g>
+    <g class="wire-group">
+        <path class="wire-shadow" stroke-width="6" d="M400,-400 Q470,520 380,1400"/>
+        <path class="wire-body"   stroke-width="3.5" d="M400,-400 Q470,520 380,1400"/>
+        <path class="wire-hi"     stroke-width="0.9" d="M398,-400 Q468,520 378,1400"/>
+    </g>
+    <g class="wire-group">
+        <path class="wire-shadow" stroke-width="5" d="M780,-400 Q840,540 760,1400"/>
+        <path class="wire-body"   stroke-width="3" d="M780,-400 Q840,540 760,1400"/>
+        <path class="wire-hi"     stroke-width="0.8" d="M778,-400 Q838,540 758,1400"/>
+    </g>
 
-<main id="workspace">
-  <section id="console" aria-label="Терминал">
-    <div id="inputline">
-      <span id="prompt">taska@root:~$</span>
-      <input id="cmd" autocomplete="off" spellcheck="false" placeholder="help" aria-label="Введите команду">
+    <g class="wire-group">
+        <path class="wire-near-shadow" stroke-width="8" d="M180,-400 Q120,500 360,1400"/>
+        <path class="wire-near-body"   stroke-width="5" d="M180,-400 Q120,500 360,1400"/>
+        <path class="wire-near-hi"     stroke-width="1.1" d="M178,-400 Q118,500 358,1400"/>
+    </g>
+    <g class="wire-group">
+        <path class="wire-near-shadow" stroke-width="7" d="M480,-400 Q540,500 420,1400"/>
+        <path class="wire-near-body"   stroke-width="4.5" d="M480,-400 Q540,500 420,1400"/>
+        <path class="wire-near-hi"     stroke-width="1" d="M478,-400 Q538,500 418,1400"/>
+    </g>
+    <g class="wire-group">
+        <path class="wire-near-shadow" stroke-width="8" d="M870,-400 Q920,500 740,1400"/>
+        <path class="wire-near-body"   stroke-width="5" d="M870,-400 Q920,500 740,1400"/>
+        <path class="wire-near-hi"     stroke-width="1.1" d="M868,-400 Q918,500 738,1400"/>
+    </g>
+    <g class="wire-group">
+        <path class="wire-near-shadow" stroke-width="7" d="M-500,240 Q500,420 1500,80"/>
+        <path class="wire-near-body"   stroke-width="4.5" d="M-500,240 Q500,420 1500,80"/>
+        <path class="wire-near-hi"     stroke-width="1" d="M-502,240 Q500,418 1498,80"/>
+    </g>
+
+    <g class="knot-group">
+        <ellipse class="knot" cx="112" cy="330" rx="4" ry="5"/>
+        <ellipse class="knot-hi" cx="110" cy="328" rx="4" ry="5"/>
+    </g>
+    <g class="knot-group">
+        <ellipse class="knot" cx="215" cy="560" rx="3.5" ry="4.5"/>
+        <ellipse class="knot-hi" cx="213" cy="558" rx="3.5" ry="4.5"/>
+    </g>
+    <g class="knot-group">
+        <ellipse class="knot" cx="432" cy="410" rx="4.5" ry="6"/>
+        <ellipse class="knot-hi" cx="430" cy="408" rx="4.5" ry="6"/>
+    </g>
+    <g class="knot-group">
+        <ellipse class="knot" cx="580" cy="640" rx="3" ry="4"/>
+        <ellipse class="knot-hi" cx="578" cy="638" rx="3" ry="4"/>
+    </g>
+    <g class="knot-group">
+        <ellipse class="knot" cx="800" cy="290" rx="4" ry="5"/>
+        <ellipse class="knot-hi" cx="798" cy="288" rx="4" ry="5"/>
+    </g>
+    <g class="knot-group">
+        <ellipse class="knot" cx="930" cy="700" rx="3.5" ry="4.5"/>
+        <ellipse class="knot-hi" cx="928" cy="698" rx="3.5" ry="4.5"/>
+    </g>
+
+    <g class="knot-group">
+        <ellipse class="knot-near" cx="160" cy="320" rx="6" ry="8"/>
+        <ellipse class="knot-near-hi" cx="157" cy="317" rx="6" ry="8"/>
+    </g>
+    <g class="knot-group">
+        <ellipse class="knot-near" cx="500" cy="580" rx="7" ry="9"/>
+        <ellipse class="knot-near-hi" cx="497" cy="577" rx="7" ry="9"/>
+    </g>
+    <g class="knot-group">
+        <ellipse class="knot-near" cx="850" cy="380" rx="6" ry="7"/>
+        <ellipse class="knot-near-hi" cx="847" cy="377" rx="6" ry="7"/>
+    </g>
+    <g class="knot-group">
+        <ellipse class="knot-near" cx="300" cy="760" rx="6" ry="7"/>
+        <ellipse class="knot-near-hi" cx="297" cy="757" rx="6" ry="7"/>
+    </g>
+    <g class="knot-group">
+        <ellipse class="knot-near" cx="620" cy="200" rx="5" ry="6"/>
+        <ellipse class="knot-near-hi" cx="617" cy="197" rx="5" ry="6"/>
+    </g>
+</svg>
+
+<div class="corner tl"><span class="dot"></span>PROTOCOL 7 / ACTIVE</div>
+<div class="corner tr"><span id="clock">--:--:--</span></div>
+<div class="corner bl"><span id="conn">0x00 // linked</span></div>
+<div class="corner br">v1.98.7 · taska</div>
+
+<canvas class="rain" id="rain"></canvas>
+<div class="eye" id="eye"></div>
+<div class="slices" id="slices"></div>
+<div class="blocks" id="blocks"></div>
+<div class="fast-scan" id="fastScan"></div>
+<div class="flash" id="flash"></div>
+<div class="glitch-bars" id="bars"></div>
+<div class="tear" id="tear"></div>
+<div class="flash-text" id="flashText"></div>
+
+<div class="page">
+
+    <div class="header">
+        <div class="kanji">タ ス カ</div>
+        <h1>TASKA</h1>
+        <div class="sub">// personal bio //</div>
+        <div class="meta">layer 01 · wired connection established</div>
     </div>
-    <div id="output" aria-live="polite"></div>
-  </section>
-  <aside class="profile" aria-label="Профиль taska">
-    <div class="avatar-pop"><img src="https://media1.tenor.com/m/WZoUBNBCxrgAAAAC/anime-spirit.gif" alt="Аватар taska"></div>
-    <div class="profile-name">taska</div>
-    <button class="profile-discord" id="discordCopy" type="button" title="Скопировать Discord username">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.058a.082.082 0 0 0 .031.056 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128c.126-.094.252-.192.372-.291a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.3 12.3 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.84 19.84 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>
-      <span>sex.ip</span>
-    </button>
-    <span class="profile-label">трахаю жизнь</span>
-  </aside>
-</main>
 
-<audio id="bgm" loop preload="auto">
-  <source src="https://fine.sunproxy.net/file/WDQ4WGRiekxNeUxHSHkwdWJkdVFFNXA2S1JGSE5aOHNub05XSmcxbnV5VkE1czJ6Z21CR3lTTHFwM0MvWjF6R01TSS9oN2gxZVUxTGRJU2xSTHdUQXhYdXZHVSt0cWx5MjdZSEl4bWMwQ0E9/Avtostopom_po_faze_sna_-_kanet_v_niz_(SkySound7.com).mp3" type="audio/mpeg">
+    <div class="block">
+        <div class="label"><span class="num">_01</span> КТО Я <span class="kanji-sm">誰</span></div>
+        <p>Меня зовут <span class="g">Taska</span>.</p>
+        <p>Я живу в этом мире, но иногда кажется, что я здесь не совсем по-настоящему. Как будто меня собрали из чужих воспоминаний и чужих слов.</p>
+    </div>
+    <div class="divider">· · · · ·</div>
+
+    <div class="block">
+        <div class="label"><span class="num">_02</span> ОТКУДА <span class="kanji-sm">起源</span></div>
+        <p>Родился к сожелению в России.</p>
+        <p>С детства любил тишину, экраны и шум проводов за окном. Что-то в этом было настоящее — хотя никто не мог объяснить, что именно.</p>
+    </div>
+    <div class="divider">· · · · ·</div>
+
+    <div class="block">
+        <div class="label"><span class="num">_03</span> ЧЕМ ЗАНИМАЮСЬ <span class="kanji-sm">作業</span></div>
+        <p>сплю · играю · уничтожаюсь</p>
+        <p>Делаю вещи, которые почти никто не видит. Иногда они попадают в сеть и живут там сами по себе.</p>
+    </div>
+    <div class="divider">· · · · ·</div>
+
+    <div class="block">
+        <div class="label"><span class="num">_04</span> СВЯЗЬ <span class="kanji-sm">接続</span></div>
+        <p><span class="g">discord - sex.ip</span></p>
+        <p class="d">Если ты дочитал до сюда — значит, ты тоже в этом слое.<span class="blink"></span></p>
+    </div>
+    <div class="divider">· · · · ·</div>
+
+    <div class="syslog" id="syslog">
+        <span class="line">handshake ok</span>
+    </div>
+
+    <div class="foot">
+        close the world. open the next.
+        <span class="small">// no rights reserved · wired //</span>
+    </div>
+
+</div>
+
+<audio id="bgm" loop autoplay>
+    <source src="https://fine.sunproxy.net/file/Sm1tUFpRSzd3R3hUM3pzRzFVOUFySmlsTUZvclBzMkJHUzJ4a1pWY3VMa1JMbHR3UzdBR3NSd2Iwak82clQ4VncySWJmd1FheXF2RGhLVUN6VjRGYmFCdytMdEdUenpadlhaSnluME80a1E9/Serial_Experements_Lain_Opening_-_Eksperimenty_Lejn_(SkySound7.com).mp3" type="audio/mpeg">
 </audio>
 
 <script>
-(function () {
-  // Perspective code rain with a projected grid floor, rendered on one canvas.
-  const canvas = document.getElementById('scene');
-  const glyphs = '012345789:<>+-*/アイウエオカキクケコサシスセソタチツテトナニヌネノ';
-  const ctx = canvas.getContext('2d', { alpha: false });
-  const fontSize = 17;
-  const rowHeight = 19;
-  let width = 0, height = 0, dpr = 1, drops = [], speeds = [], lastFrame = 0;
-  let pointerX = 0, pointerY = 0;
+    /* ---------- звук ---------- */
+    const bgm = document.getElementById('bgm');
+    bgm.volume = 0.35;
+    function tryPlay() { bgm.play().catch(()=>{}); }
+    tryPlay();
+    document.addEventListener('click', tryPlay, { once: true });
+    document.addEventListener('touchstart', tryPlay, { once: true });
+    document.addEventListener('keydown', tryPlay, { once: true });
 
-  function resize() {
-    dpr = Math.min(window.devicePixelRatio || 1, 1.25);
-    width = window.innerWidth;
-    height = window.innerHeight;
-    canvas.width = Math.round(width * dpr);
-    canvas.height = Math.round(height * dpr);
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.fillStyle = '#000';
-    ctx.fillRect(0, 0, width, height);
-    const count = Math.ceil(width / fontSize);
-    drops = Array.from({ length: count }, () => Math.random() * (height / rowHeight));
-    speeds = drops.map(() => .45 + Math.random() * 1.1);
-  }
-
-  function drawFloor() {
-    const horizon = height * .58 + pointerY * 8;
-    const center = width * .5 + pointerX * 18;
-    ctx.save();
-    ctx.lineWidth = 1;
-    ctx.strokeStyle = 'rgba(35, 185, 112, .15)';
-    for (let i = 0; i < 18; i++) {
-      const progress = (i / 18 + (lastFrame * .000025) % (1 / 18)) % 1;
-      const y = horizon + (height - horizon) * progress * progress;
-      ctx.globalAlpha = .08 + progress * .17;
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(width, y);
-      ctx.stroke();
+    /* ---------- часы ---------- */
+    function tick() {
+        const d = new Date();
+        const p = n => String(n).padStart(2,'0');
+        document.getElementById('clock').textContent =
+            p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds());
     }
-    ctx.globalAlpha = .18;
-    for (let i = -12; i <= 12; i++) {
-      ctx.beginPath();
-      ctx.moveTo(center, horizon);
-      ctx.lineTo(center + i * width * .12, height);
-      ctx.stroke();
+    setInterval(tick, 1000); tick();
+
+    /* ---------- счётчик ---------- */
+    const connEl = document.getElementById('conn');
+    let v = 0;
+    setInterval(() => {
+        v = (v + 1 + Math.floor(Math.random()*3)) % 256;
+        connEl.textContent = '0x' + v.toString(16).padStart(2,'0').toUpperCase() + ' // linked';
+    }, 900);
+
+    /* ---------- пылинки ---------- */
+    const dust = document.getElementById('dust');
+    for (let i = 0; i < 28; i++) {
+        const s = document.createElement('span');
+        s.style.left = Math.random()*100 + 'vw';
+        s.style.top = (100 + Math.random()*20) + 'vh';
+        s.style.animationDuration = (14 + Math.random()*22) + 's';
+        s.style.animationDelay = (-Math.random()*30) + 's';
+        const size = 1 + Math.random()*2;
+        s.style.width = size + 'px';
+        s.style.height = size + 'px';
+        s.style.opacity = 0.3 + Math.random()*0.5;
+        dust.appendChild(s);
     }
-    ctx.restore();
-  }
 
-  function animate(now) {
-    requestAnimationFrame(animate);
-    if (now - lastFrame < 30) return;
-    const elapsed = Math.min((now - lastFrame) / 1000 || .03, .06);
-    lastFrame = now;
-    ctx.fillStyle = 'rgba(0, 3, 1, .19)';
-    ctx.fillRect(0, 0, width, height);
-    ctx.font = fontSize + 'px monospace';
-    ctx.textAlign = 'center';
-    drops.forEach((row, i) => {
-      const x = i * fontSize + fontSize / 2 + pointerX * (i / drops.length - .5) * 24;
-      const y = row * rowHeight;
-      ctx.fillStyle = '#d8ffe9';
-      ctx.globalAlpha = .88;
-      ctx.fillText(glyphs[(Math.random() * glyphs.length) | 0], x, y);
-      ctx.fillStyle = '#00a65b';
-      for (let tail = 1; tail <= 8; tail++) {
-        ctx.globalAlpha = (1 - tail / 9) * .62;
-        ctx.fillText(glyphs[(Math.random() * glyphs.length) | 0], x, y - tail * rowHeight);
-      }
-      ctx.globalAlpha = 1;
-      drops[i] += speeds[i] * elapsed * 22;
-      if (y > height && Math.random() > .975) {
-        drops[i] = -Math.random() * 18;
-        speeds[i] = .45 + Math.random() * 1.1;
-      }
-    });
-    ctx.globalAlpha = 1;
-    drawFloor();
-  }
+    /* ---------- лог ---------- */
+    const log = document.getElementById('syslog');
+    const messages = [
+        'layer 02 accessed', 'packet received  0x4A',
+        'syncing memory...', 'handshake ok', 'node 7 · online',
+        'signal stable', 'reading /dev/wired', 'echo: who am i',
+        'buffer flushed', 'pulse 61 · stable', 'noise filtered',
+        'stream resumed', '// you are not here //',
+        'layer 03 accessed', 'you were never here',
+        'i am you', 'delete this', 'wake up',
+        '現実', '夢', '玲音', '接続完了'
+    ];
+    setInterval(() => {
+        const line = document.createElement('span');
+        line.className = 'line';
+        line.textContent = messages[Math.floor(Math.random()*messages.length)];
+        log.appendChild(line);
+        while (log.children.length > 8) log.removeChild(log.firstChild);
+    }, 2000);
 
-  window.addEventListener('resize', resize);
-  window.addEventListener('pointermove', e => {
-    pointerX = e.clientX / window.innerWidth - .5;
-    pointerY = e.clientY / window.innerHeight - .5;
-  }, { passive: true });
-  document.addEventListener('visibilitychange', () => { lastFrame = 0; });
-  resize();
-  requestAnimationFrame(animate);
+    /* ---------- подёргивания текста ---------- */
+    const paras = document.querySelectorAll('.block p');
+    setInterval(() => {
+        if (!paras.length) return;
+        const el = paras[Math.floor(Math.random()*paras.length)];
+        el.style.transition = 'transform 0.15s';
+        el.style.transform = 'translateX(' + (Math.random()*2-1).toFixed(2) + 'px)';
+        setTimeout(() => el.style.transform = '', 150);
+    }, 3500);
 
-  // ============ BOOT SEQUENCE ============
-  const bootEl = document.getElementById('boot');
-  const bootLines = [
-    'WAKE UP, TASKA.',
-    'CPU: QuantumCore i9-2600K ............ OK',
-    'MEMORY: 640K conventional ............ OK',
-    'RENDER: DIGITAL REALM ............... ONLINE',
-    'NET: eth0 10.0.0.13 ................. CONNECTED',
-    'LOADING kernel modules [##########] 100%',
-    'Mounting /dev/bio ................... OK',
-    'Starting identity.service ........... OK',
-    'Decrypting profile: TASKA ........... DONE',
-    '',
-    'ACCESS GRANTED.'
-  ];
+    /* ============================================================
+       ЭЛЕМЕНТЫ
+       ============================================================ */
+    const lainLayer  = document.getElementById('lainLayer');
+    const flashEl    = document.getElementById('flash');
+    const barsEl     = document.getElementById('bars');
+    const tearEl     = document.getElementById('tear');
+    const textEl     = document.getElementById('flashText');
+    const eyeEl      = document.getElementById('eye');
+    const slicesEl   = document.getElementById('slices');
+    const blocksEl   = document.getElementById('blocks');
+    const fastScanEl = document.getElementById('fastScan');
+    const rainCanvas = document.getElementById('rain');
+    const rctx       = rainCanvas.getContext('2d');
 
-  function runBoot() {
-    let li = 0;
-    function nextLine() {
-      if (li < bootLines.length) {
-        bootEl.innerHTML = bootLines.slice(0, li + 1).join('\n') + '\n<span class="cursor"></span>';
-        li++;
-        setTimeout(nextLine, 80 + Math.random() * 140);
-      } else {
-        setTimeout(function () {
-          bootEl.style.display = 'none';
-          document.getElementById('presskey').style.display = 'flex';
-        }, 600);
-      }
+    const lainImages = [
+        'https://i.pinimg.com/736x/e3/55/f6/e355f667d9779a6ffe46b462d48327cc.jpg',
+        'https://shikimori.io/system/user_images/original/680612/1469724.jpg',
+        'https://i.ytimg.com/vi/GsH36XOXPDU/maxresdefault.jpg',
+        'https://cdn.kanobu.ru/anime/images/8/7f26a61c-7675-4a63-9704-4ef8c550cf83.webp',
+        'https://media1.tenor.com/m/OlHMWq46CtAAAAAd/serial-experiments-lain-lain.gif',
+        'https://media1.tenor.com/m/Iwna057lPAUAAAAC/lain-serial-experiments-lain.gif',
+        'https://media1.tenor.com/m/L_WRJTW3qYYAAAAC/lain.gif',
+        'https://media.tenor.com/g0G-j2hvnWkAAAAM/serial-experiments-lain-lain.gif',
+        'https://media1.tenor.com/m/_v4H6lwCZZ0AAAAC/serial-experiments-lain-lain.gif',
+        'https://media1.tenor.com/m/T7Wl32eM1wQAAAAd/lain.gif',
+        'https://media1.tenor.com/m/mjWYgxi6RS8AAAAC/lain-typing.gif',
+        'https://media1.tenor.com/m/CwT7OHL5dFEAAAAC/lain-sel.gif',
+        'https://media1.tenor.com/m/TERwjT6K-dYAAAAC/serial-experiments-lain-lain.gif',
+        'https://media1.tenor.com/m/ATtf03SMeDcAAAAC/lain-creepy.gif',
+        'https://media1.tenor.com/m/0TLWEcrEToIAAAAd/lain-laugh.gif',
+        'https://media1.tenor.com/m/7pxJro_yZJUAAAAC/lain-iwakura-demilore.gif',
+        'https://media1.tenor.com/m/LScBRLhzlFUAAAAC/lain-sel.gif',
+        'https://i.imgur.com/6iCL78Y.gif',
+        'https://i.pinimg.com/originals/bf/fe/f3/bffef399b00a7d397392b416689d9008.gif',
+        'https://media1.tenor.com/m/dmLfwufzJkIAAAAC/lain-serial-experiments-lain.gif',
+        'https://media1.tenor.com/m/ast8qxmY7D4AAAAC/lain.gif',
+        'https://giffiles.alphacoders.com/171/171489.gif',
+        'https://i.pinimg.com/originals/4b/84/90/4b849073fd280c31a10239faaf056453.jpg',
+        'https://avatars.mds.yandex.net/i?id=51620f8155779acb5871c7ed62731898_l-9985849-images-thumbs&n=13',
+        'https://avatars.mds.yandex.net/i?id=741ce77a20c485ce11956bdfaf2f637a_l-4575625-images-thumbs&n=13',
+        'https://i.pinimg.com/736x/f8/9a/7f/f89a7c645c72fabc082c5f22fda475e2.jpg',
+        'https://avatars.mds.yandex.net/i?id=76318e48888006f0a84acc205b3631fb_l-4119111-images-thumbs&n=13'
+    ];
+
+    const flashWords = [
+        'WAKE UP','YOU ARE NOT HERE','LAYER 07','PROTOCOL','I AM YOU',
+        '玲音','接続','DELETE','REBOOT','WHO AM I','LAYER 02',
+        '現実','夢','SYNC','// / / /',
+        'DO YOU REMEMBER','CLOSE THE WORLD','タスカ','タ ス カ',
+        'FORGET','REMEMBER','STOP','BEGIN','何者','私は誰',
+        'NG','ERROR','EXIT','RUN','NO SIGNAL','DEAD'
+    ];
+    const flashColors = ['#ff0040','#00ff88','#ffffff','#00aaff','#ff00ff','#ffcc00','#ff2200','#00ffff'];
+
+    function showLainImage() {
+        const img = document.createElement('img');
+        img.className = 'lain-img';
+        img.src = lainImages[Math.floor(Math.random() * lainImages.length)];
+        img.alt = ''; img.loading = 'eager';
+        img.classList.add(['show','hit','soft','burn'][Math.floor(Math.random()*4)]);
+        const dur = 500 + Math.random() * 700;
+        img.style.setProperty('--dur', dur + 'ms');
+        lainLayer.appendChild(img);
+        setTimeout(() => img.remove(), dur + 200);
     }
-    nextLine();
-  }
-  runBoot();
-
-  // ============ AUDIO ============
-  const audio = document.getElementById('bgm');
-  let playing = false;
-
-  function startAudio() {
-    if (playing) return;
-    audio.volume = 0.5;
-    audio.play().then(function () {
-      playing = true;
-    }).catch(function () {});
-  }
-
-  // ============ CONSOLE ============
-  const output = document.getElementById('output');
-  const cmdInput = document.getElementById('cmd');
-  const consoleEl = document.getElementById('console');
-  let started = false;
-  let history = [];
-  let hIndex = -1;
-
-  const ASCII_LOGO = [
-    ' _____   ___   _____  _  __   ___',
-    '|__   | / _ \\ / ____|| |/ /  / _ \\',
-    '   | | | |_| | (___  |   /  | | | |',
-    '   | | |  _  |\\___ \\ |  <   | | | |',
-    '   | | | | | |____) || . \\  | |_| |',
-    '   |_| |_| |_/_____/ |_|\\_\\  \\___/'
-  ].join('\n');
-
-  const BIO = [
-    '+--------------------------------------+',
-    '| USER:    taska                       |',
-    '| DISCORD: sex.ip                      |',
-    '| STATUS:  online                      |',
-    '| RANK:    root                        |',
-    '+--------------------------------------+'
-  ].join('\n');
-
-  function printRaw(text, cls) {
-    const span = document.createElement('span');
-    if (cls) span.className = cls;
-    span.textContent = text;
-    output.appendChild(span);
-    output.appendChild(document.createTextNode('\n'));
-    output.scrollTop = output.scrollHeight;
-  }
-
-  function printHTML(html) {
-    const div = document.createElement('div');
-    div.innerHTML = html;
-    output.appendChild(div);
-    output.scrollTop = output.scrollHeight;
-  }
-
-  const commands = {
-    help: function () {
-      printRaw('available commands:', 'bright');
-      printRaw('  help      - show this message');
-      printRaw('  whoami    - display identity');
-      printRaw('  bio       - show profile card');
-      printRaw('  avatar    - render avatar');
-      printRaw('  discord   - copy discord tag');
-      printRaw('  neofetch  - system info');
-      printRaw('  clear     - clear terminal');
-      printRaw('  exit      - logout (joke)');
-      printRaw('  sudo      - try it');
-    },
-    whoami: function () {
-      printRaw('taska - root user, rank: GODMODE', 'white');
-    },
-    bio: function () {
-      printRaw(BIO);
-    },
-    avatar: function () {
-      printHTML('<span class="avatar-pop is-large"><img src="https://media1.tenor.com/m/WZoUBNBCxrgAAAAC/anime-spirit.gif" alt="avatar"></span>');
-      printRaw('avatar rendered. filter: MATRIX/CRT-9000', 'dim');
-    },
-    discord: function () {
-      if (navigator.clipboard) navigator.clipboard.writeText('sex.ip').catch(function () {});
-      printRaw('discord tag copied: sex.ip', 'bright');
-    },
-    neofetch: function () {
-      printRaw(ASCII_LOGO, 'logo');
-      printRaw('');
-      printRaw('  taska@root', 'cyan');
-      printRaw('  -------------', 'dim');
-      printRaw('  OS: TASKA shell x86_64');
-      printRaw('  Host: The Matrix');
-      printRaw('  Kernel: 6.6.6-matrix');
-      printRaw('  Shell: bio-sh 1.0');
-      printRaw('  Resolution: ' + window.innerWidth + 'x' + window.innerHeight);
-      printRaw('  Theme: [MATRIX] [GREEN] [CRT]');
-      printRaw('  Avatar: anime-spirit.gif');
-      printRaw('  Music: kanet_v_niz.mp3');
-    },
-    clear: function () {
-      output.innerHTML = '';
-    },
-    exit: function () {
-      printRaw('there is no escape.', 'err');
-    },
-    sudo: function () {
-      printRaw('taska is in the sudoers file. incident reported.', 'err');
+    function showLainBurst(count = 2) {
+        for (let i = 0; i < count; i++) setTimeout(showLainImage, i * (200 + Math.random()*200));
     }
-  };
 
-  function escapeHtml(s) {
-    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  }
-
-  function execCommand(raw) {
-    const line = raw.trim();
-    printRaw('taska@root:~$ ' + line, 'bright');
-    if (!line) return;
-    history.push(line);
-    hIndex = history.length;
-    const parts = line.split(/\s+/);
-    const name = parts[0].toLowerCase();
-    const fn = commands[name];
-    if (fn) {
-      fn(parts.slice(1));
-    } else {
-      printRaw('bio-sh: command not found: ' + name + ' - type "help"', 'err');
+    /* ============================================================
+       СМЕНА ШРИФТА
+       ============================================================ */
+    const glitchFonts = ['font-1','font-2','font-3','font-4','font-5'];
+    let fontTimer = null;
+    function fontGlitch(duration = 400) {
+        glitchFonts.forEach(f => document.body.classList.remove(f));
+        const f = glitchFonts[Math.floor(Math.random() * glitchFonts.length)];
+        document.body.classList.add(f);
+        clearTimeout(fontTimer);
+        fontTimer = setTimeout(() => document.body.classList.remove(f), duration);
     }
-  }
 
-  function startConsole() {
-    if (started) return;
-    started = true;
-    document.getElementById('presskey').style.display = 'none';
-    document.getElementById('workspace').style.display = 'grid';
-    startAudio();
-
-    printRaw('Type "help" to inspect this identity.', 'dim');
-    printRaw('');
-    printRaw(ASCII_LOGO, 'logo');
-    printRaw('');
-    printRaw(BIO);
-    printRaw('');
-    cmdInput.focus();
-  }
-
-  document.getElementById('presskey').addEventListener('click', startConsole);
-  document.getElementById('discordCopy').addEventListener('click', function () {
-    if (navigator.clipboard) navigator.clipboard.writeText('sex.ip').catch(function () {});
-  });
-  document.addEventListener('keydown', function (e) {
-    if (!started) { startConsole(); return; }
-    if (document.activeElement !== cmdInput) cmdInput.focus();
-  });
-
-  cmdInput.addEventListener('keydown', function (e) {
-    if (e.key === 'Enter') {
-      execCommand(cmdInput.value);
-      cmdInput.value = '';
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      if (hIndex > 0) { hIndex--; cmdInput.value = history[hIndex] || ''; }
-    } else if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      if (hIndex < history.length - 1) { hIndex++; cmdInput.value = history[hIndex] || ''; }
-      else { hIndex = history.length; cmdInput.value = ''; }
-    } else if (e.key === 'l' && e.ctrlKey) {
-      e.preventDefault();
-      output.innerHTML = '';
+    /* ============================================================
+       БАЗОВЫЙ ГЛИТЧ СИМВОЛОВ
+       ============================================================ */
+    const glitchChars = 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ0123456789'.split('');
+    function glitchTextNodes() {
+        const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+        const nodes = [];
+        let node;
+        while (node = walker.nextNode()) {
+            if (node.textContent.trim().length > 3 &&
+                !node.parentElement.classList.contains('syslog') &&
+                !node.parentElement.closest('.corner') &&
+                !node.parentElement.closest('.flash-text')) {
+                nodes.push(node);
+            }
+        }
+        const picked = nodes.sort(() => Math.random() - 0.5).slice(0, 4 + Math.floor(Math.random()*5));
+        picked.forEach(n => {
+            const orig = n.textContent;
+            let out = '';
+            for (const ch of orig) {
+                if (ch !== ' ' && ch !== '\n' && Math.random() < 0.22) {
+                    out += glitchChars[Math.floor(Math.random() * glitchChars.length)];
+                } else out += ch;
+            }
+            n.textContent = out;
+            setTimeout(() => { n.textContent = orig; }, 120 + Math.random() * 220);
+        });
     }
-  });
 
-  consoleEl.addEventListener('click', function () {
-    cmdInput.focus();
-  });
+    /* ============================================================
+       ЯПОНСКИЙ ГЛИТЧ
+       ============================================================ */
+    const japanesePhrases = [
+        '玲音', '私', 'あなたは誰ですか', '私はここにいる', '現実',
+        '夢', '電脳', '神', '私は神', '何者', '電脳世界', '存在',
+        '見える', '感じる', '私を信じて', '声', 'ワイアード',
+        'ただいま', 'おかえり', '目覚め', '眠れない', '全部夢',
+        'こちら側', 'あちら側', '私はあなた', 'プロトコル7',
+        '神様', 'リセット', '消して', '存在しない',
+        'あなたを覚えている', '私は誰ですか', 'ネット', '現実世界',
+        'どこにいるの', 'いっしょに', '私を見て', 'あなたは私',
+        '終わり', '始まり', '痛い', '冷たい', '怖い', '静か',
+        '誰かいる', '答えて', '忘れないで', '覚えている',
+        'ここにいる', 'ワイアードの住人', 'ゲームは終わった',
+        'レイヤー7', '私は誰', '接続完了', '切断',
+        '世界を閉じろ', '次の世界を開け', '現実なんてない'
+    ];
 
-})();
+    let jpBusy = false;
+    function japaneseGlitch(duration = 800) {
+        if (jpBusy) return;
+        jpBusy = true;
+        const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+        const nodes = [];
+        let node;
+        while (node = walker.nextNode()) {
+            const p = node.parentElement;
+            if (!p) continue;
+            if (p.closest('.flash-text') ||
+                p.closest('.corner') ||
+                p.closest('.syslog')) continue;
+            if (node.textContent.trim().length === 0) continue;
+            nodes.push(node);
+        }
+        const saved = nodes.map(n => ({ node: n, text: n.textContent }));
+        nodes.forEach(n => {
+            n.textContent = japanesePhrases[Math.floor(Math.random() * japanesePhrases.length)];
+        });
+        document.body.classList.add('storm');
+        document.body.classList.add('shift');
+        setTimeout(() => document.body.classList.remove('shift'), 250);
+        setTimeout(() => {
+            saved.forEach(s => { s.node.textContent = s.text; });
+            document.body.classList.remove('storm');
+            jpBusy = false;
+        }, duration);
+    }
+
+    /* ============================================================
+       РАЗРЕЗ ЭКРАНА НА ПОЛОСЫ
+       ============================================================ */
+    function sliceScreen() {
+        slicesEl.innerHTML = '';
+        const count = 4 + Math.floor(Math.random() * 8);
+        const colors = ['#050508', '#0a0010', '#000a05', '#100008', '#f0f0f0', '#aaffcc'];
+        for (let i = 0; i < count; i++) {
+            const s = document.createElement('div');
+            s.className = 'slice';
+            s.style.top = (Math.random() * 100) + '%';
+            s.style.height = (2 + Math.random() * 12) + 'px';
+            s.style.background = colors[Math.floor(Math.random() * colors.length)];
+            s.style.transform = `translateX(${(Math.random()-0.5)*40}px)`;
+            slicesEl.appendChild(s);
+        }
+        slicesEl.classList.add('active');
+        setTimeout(() => {
+            slicesEl.classList.remove('active');
+            slicesEl.innerHTML = '';
+        }, 280);
+    }
+
+    /* ============================================================
+       СЛУЧАЙНЫЕ БЛОКИ ПОМЕХ
+       ============================================================ */
+    function randomBlocks() {
+        blocksEl.innerHTML = '';
+        const count = 3 + Math.floor(Math.random() * 8);
+        for (let i = 0; i < count; i++) {
+            const b = document.createElement('div');
+            b.className = 'block-rect';
+            b.style.left = (Math.random() * 100) + '%';
+            b.style.top = (Math.random() * 100) + '%';
+            b.style.width = (10 + Math.random() * 200) + 'px';
+            b.style.height = (4 + Math.random() * 40) + 'px';
+            b.style.opacity = 0.4 + Math.random() * 0.5;
+            blocksEl.appendChild(b);
+        }
+        blocksEl.classList.add('active');
+        setTimeout(() => {
+            blocksEl.classList.remove('active');
+            blocksEl.innerHTML = '';
+        }, 200 + Math.random() * 300);
+    }
+
+    /* ============================================================
+       БЫСТРЫЙ СКАНЛАЙН
+       ============================================================ */
+    function fastScan() {
+        fastScanEl.classList.remove('active'); void fastScanEl.offsetWidth;
+        fastScanEl.classList.add('active');
+    }
+
+    /* ============================================================
+       ДОЖДЬ
+       ============================================================ */
+    function resizeRain() {
+        rainCanvas.width = window.innerWidth;
+        rainCanvas.height = window.innerHeight;
+    }
+    resizeRain();
+    window.addEventListener('resize', resizeRain);
+    const rainChars = 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ0123456789'.split('');
+    let rainColumns = [];
+    let rainTimer = null;
+    const rainFontSize = 16;
+    function startRain(duration) {
+        const cols = Math.ceil(window.innerWidth / rainFontSize);
+        rainColumns = [];
+        for (let i = 0; i < cols; i++) rainColumns.push(Math.random() * rainCanvas.height);
+        rainCanvas.classList.add('active');
+        clearInterval(rainTimer);
+        rainTimer = setInterval(drawRain, 45);
+        setTimeout(() => {
+            rainCanvas.classList.remove('active');
+            setTimeout(() => {
+                clearInterval(rainTimer);
+                rctx.clearRect(0, 0, rainCanvas.width, rainCanvas.height);
+            }, 300);
+        }, duration);
+    }
+    function drawRain() {
+        rctx.fillStyle = 'rgba(0, 0, 0, 0.09)';
+        rctx.fillRect(0, 0, rainCanvas.width, rainCanvas.height);
+        rctx.font = rainFontSize + 'px VT323, monospace';
+        for (let i = 0; i < rainColumns.length; i++) {
+            const ch = rainChars[Math.floor(Math.random() * rainChars.length)];
+            const x = i * rainFontSize, y = rainColumns[i];
+            rctx.fillStyle = Math.random() > 0.92
+                ? 'rgba(220, 240, 220, 0.95)' : 'rgba(70, 150, 90, 0.6)';
+            rctx.fillText(ch, x, y);
+            if (y > rainCanvas.height && Math.random() > 0.975) rainColumns[i] = 0;
+            rainColumns[i] += rainFontSize;
+        }
+    }
+
+    /* ============================================================
+       ПЕРЕСТАНОВКА ПРОВОДОВ
+       ============================================================ */
+    const wireGroups = document.querySelectorAll('.wire-group');
+    const knotGroups = document.querySelectorAll('.knot-group');
+
+    function warpWires() {
+        wireGroups.forEach(g => {
+            const dx  = (Math.random() - 0.5) * 320;
+            const dy  = (Math.random() - 0.5) * 220;
+            const rot = (Math.random() - 0.5) * 10;
+            g.style.transition = 'transform 0.14s steps(2)';
+            g.style.transformOrigin = '50% 50%';
+            g.style.transform = `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px) rotate(${rot.toFixed(2)}deg)`;
+        });
+        knotGroups.forEach(g => {
+            const dx = (Math.random() - 0.5) * 320;
+            const dy = (Math.random() - 0.5) * 220;
+            g.style.transition = 'transform 0.14s steps(2)';
+            g.style.transform = `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px)`;
+        });
+    }
+
+    /* ============================================================
+       СБОИ
+       ============================================================ */
+    function microGlitch() {
+        document.body.classList.add('shift');
+        if (Math.random() < 0.6) showLainImage();
+        warpWires();
+        if (Math.random() < 0.5) fontGlitch(250);
+        if (Math.random() < 0.5) glitchTextNodes();
+        if (Math.random() < 0.4) randomBlocks();
+        if (Math.random() < 0.3) fastScan();
+        if (Math.random() < 0.3) sliceScreen();
+        setTimeout(() => document.body.classList.remove('shift'), 250);
+    }
+
+    function midGlitch() {
+        document.body.classList.add('storm');
+
+        const c = flashColors[Math.floor(Math.random() * flashColors.length)];
+        flashEl.style.background = c;
+        flashEl.style.setProperty('--dur', '260ms');
+        flashEl.classList.remove('active'); void flashEl.offsetWidth;
+        flashEl.classList.add('active');
+
+        barsEl.classList.remove('active'); void barsEl.offsetWidth;
+        barsEl.classList.add('active');
+
+        showLainBurst(2 + Math.floor(Math.random()*2));
+        warpWires();
+        fontGlitch(500);
+
+        if (Math.random() < 0.4) japaneseGlitch(700);
+        else glitchTextNodes();
+
+        if (Math.random() < 0.6) randomBlocks();
+        if (Math.random() < 0.7) fastScan();
+        if (Math.random() < 0.7) sliceScreen();
+
+        if (Math.random() < 0.5) startRain(900);
+        if (Math.random() < 0.4) {
+            eyeEl.classList.remove('active'); void eyeEl.offsetWidth;
+            eyeEl.classList.add('active');
+        }
+        if (Math.random() < 0.5) {
+            document.body.classList.add('rgb-split');
+            setTimeout(() => document.body.classList.remove('rgb-split'), 300);
+        }
+        if (Math.random() < 0.3) {
+            document.body.classList.add('blur-pulse');
+            setTimeout(() => document.body.classList.remove('blur-pulse'), 360);
+        }
+
+        setTimeout(() => document.body.classList.remove('storm'), 700);
+    }
+
+    function bigGlitch() {
+        document.body.classList.add('storm');
+        document.body.classList.add('mega-shift');
+        setTimeout(() => document.body.classList.remove('mega-shift'), 420);
+
+        document.body.classList.add('invert');
+        setTimeout(() => document.body.classList.remove('invert'),
+                   200 + Math.random() * 500);
+
+        const c = flashColors[Math.floor(Math.random() * flashColors.length)];
+        flashEl.style.background = c;
+        flashEl.style.setProperty('--dur', '450ms');
+        flashEl.classList.remove('active'); void flashEl.offsetWidth;
+        flashEl.classList.add('active');
+
+        barsEl.classList.remove('active'); void barsEl.offsetWidth;
+        barsEl.classList.add('active');
+
+        tearEl.style.top = (20 + Math.random() * 60) + '%';
+        tearEl.classList.remove('active'); void tearEl.offsetWidth;
+        tearEl.classList.add('active');
+
+        textEl.textContent = flashWords[Math.floor(Math.random() * flashWords.length)];
+        textEl.style.color = Math.random() > 0.5 ? '#d8e8d8' : '#ff8899';
+        textEl.classList.remove('active'); void textEl.offsetWidth;
+        textEl.classList.add('active');
+
+        showLainBurst(4 + Math.floor(Math.random()*3));
+        warpWires();
+        setTimeout(warpWires, 200);
+        setTimeout(warpWires, 400);
+
+        fontGlitch(900);
+        japaneseGlitch(900);
+
+        startRain(1600);
+        sliceScreen();
+        setTimeout(sliceScreen, 180);
+        randomBlocks();
+        setTimeout(randomBlocks, 260);
+        fastScan();
+        setTimeout(fastScan, 240);
+
+        eyeEl.classList.remove('active'); void eyeEl.offsetWidth;
+        eyeEl.classList.add('active');
+
+        document.body.classList.add('rgb-split');
+        setTimeout(() => document.body.classList.remove('rgb-split'), 320);
+
+        document.body.classList.add('blur-pulse');
+        setTimeout(() => document.body.classList.remove('blur-pulse'), 380);
+
+        document.body.classList.add('shift');
+        setTimeout(() => document.body.classList.remove('shift'), 250);
+
+        setTimeout(() => document.body.classList.remove('storm'), 900);
+    }
+
+    function chaosBurst() {
+        // мгновенный набор мелких эффектов подряд
+        for (let i = 0; i < 3; i++) {
+            setTimeout(() => {
+                randomBlocks();
+                if (Math.random() < 0.5) fastScan();
+                if (Math.random() < 0.5) sliceScreen();
+                if (Math.random() < 0.4) showLainImage();
+            }, i * 180);
+        }
+    }
+
+    function scheduleGlitch() {
+        const r = Math.random();
+        let next;
+        if (r < 0.28) {
+            microGlitch();
+            next = 900 + Math.random() * 2800;
+        } else if (r < 0.72) {
+            midGlitch();
+            next = 2200 + Math.random() * 5000;
+        } else {
+            bigGlitch();
+            if (Math.random() < 0.7) {
+                setTimeout(() => {
+                    midGlitch();
+                    showLainBurst(2);
+                    chaosBurst();
+                }, 700 + Math.random() * 600);
+            }
+            next = 6000 + Math.random() * 9000;
+        }
+        setTimeout(scheduleGlitch, next);
+    }
+    setTimeout(scheduleGlitch, 1800);
+
+    /* ---- шёпот ---- */
+    const whispers = [
+        'ты уже здесь был','кто ты','ты помнишь',
+        '// она смотрит //','wired','закрой глаза',
+        'this is a layer','не забывай','я знаю тебя',
+        'ты не настоящий','проснись','где ты'
+    ];
+    setInterval(() => {
+        if (Math.random() > 0.5) return;
+        textEl.textContent = whispers[Math.floor(Math.random() * whispers.length)];
+        textEl.style.color = 'rgba(180, 220, 190, 0.9)';
+        textEl.style.fontSize = '28px';
+        textEl.classList.remove('active'); void textEl.offsetWidth;
+        textEl.classList.add('active');
+        setTimeout(() => { textEl.style.fontSize = ''; }, 600);
+    }, 12000);
+
+    /* ---- автономные срабатывания ---- */
+    setInterval(() => {
+        if (Math.random() > 0.5) return;
+        showLainImage();
+    }, 4000);
+
+    setInterval(() => {
+        if (Math.random() > 0.4) return;
+        randomBlocks();
+    }, 5500);
+
+    setInterval(() => {
+        if (Math.random() > 0.4) return;
+        sliceScreen();
+    }, 7000);
+
+    setInterval(() => {
+        if (Math.random() > 0.35) return;
+        fastScan();
+    }, 6000);
+
+    setInterval(() => {
+        if (Math.random() > 0.3) return;
+        document.body.classList.add('rgb-split');
+        setTimeout(() => document.body.classList.remove('rgb-split'), 300);
+    }, 8500);
 </script>
 
 </body>
